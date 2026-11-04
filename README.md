@@ -12,11 +12,43 @@ npx expo start
 
 ثم امسح رمز QR عبر Expo Go، أو اضغط `a` لأندرويد / `i` لـ iOS (محاكي) / `w` للويب.
 
+### Desktop web simulator (Windows-friendly)
+
+Run the app in a desktop browser — no phone or Expo Go required.
+
+**PowerShell / Command Prompt (Windows):**
+
+```bat
+cd path\to\Arabic-chess
+npm install
+npm run web
+```
+
+Or equivalently:
+
+```bat
+npx expo start --web
+```
+
+- The first run opens the default browser (usually `http://localhost:8081`).
+- On a wide desktop window you get a **centered phone frame** with RTL Arabic UI.
+- Narrow the window (or use DevTools device mode) to see the full-bleed mobile layout.
+- If the page looks stale: `npx expo start --web --clear`
+- Need Node.js LTS from [nodejs.org](https://nodejs.org/) if `npm` is missing.
+
+**macOS / Linux:**
+
+```bash
+npm install
+npm run web
+```
+
 أوامر مفيدة:
 
 ```bash
 npm run typecheck
 npx expo start --clear
+npx expo export --platform web
 ```
 
 ## المتغيرات البيئية
