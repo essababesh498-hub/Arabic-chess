@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +14,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { StepProgress } from '@/components/StepProgress';
 import { GenieLampTutor } from '@/components/tutor/GenieLampTutor';
 import { useProgress } from '@/context/ProgressContext';
-import { getChapter } from '@/lib/curriculum/chapters';
+import { getChapter, isChapterUnlocked, isLastChapter } from '@/lib/curriculum/chapters';
 import type {
   DemoStep,
   ExerciseItem,
@@ -21,19 +22,59 @@ import type {
   InteractiveStep,
   QuizStep,
 } from '@/lib/curriculum/types';
-import { strings } from '@/lib/strings';
+import { exercisePartialLabel, strings } from '@/lib/strings';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 export default function ChapterPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const chapter = getChapter(id ?? '');
-  const { completeChapter } = useProgress();
+  const chapterId = typeof id === 'string' ? id : '';
+  const chapter = getChapter(chapterId);
+  const { progress, ready, completeChapter } = useProgress();
   const [stepIndex, setStepIndex] = useState(0);
+  const [trackedChapterId, setTrackedChapterId] = useState(chapterId);
+  const [demoSeen, setDemoSeen] = useState(false);
+  const [exerciseIdx, setExerciseIdx] = useState(0);
+  const [solved, setSolved] = useState<Record<string, boolean>>({});
+  const [found, setFound] = useState<Record<string, Square[]>>({});
+  const [exerciseMessage, setExerciseMessage] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  if (trackedChapterId !== chapterId) {
+    setTrackedChapterId(chapterId);
+    setStepIndex(0);
+    setDemoSeen(false);
+    setExerciseIdx(0);
+    setSolved({});
+    setFound({});
+    setExerciseMessage(null);
+    setAnswers({});
+    setQuizSubmitted(false);
+  }
 
   if (!chapter) {
     return (
       <View style={styles.center}>
         <Text style={styles.body}>الفصل غير موجود.</Text>
+        <PrimaryButton label="رجوع" onPress={() => router.back()} />
+      </View>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.boardFrame} size="large" />
+      </View>
+    );
+  }
+
+  const unlocked = isChapterUnlocked(chapter.id, progress.completedChapterIds);
+  if (!unlocked) {
+    return (
+      <View style={styles.center}>
+        <Stack.Screen options={{ title: chapter.title }} />
+        <Text style={styles.body}>{strings.chapterLockedHint}</Text>
         <PrimaryButton label="رجوع" onPress={() => router.back()} />
       </View>
     );
@@ -59,7 +100,13 @@ export default function ChapterPlayerScreen() {
         ) : null}
 
         {step.kind === 'demo' ? (
-          <DemoView step={step} onNext={() => setStepIndex(2)} onBack={() => setStepIndex(0)} />
+          <DemoView
+            step={step}
+            seen={demoSeen}
+            onSeen={() => setDemoSeen(true)}
+            onNext={() => setStepIndex(2)}
+            onBack={() => setStepIndex(0)}
+          />
         ) : null}
 
         {step.kind === 'interactive' ? (
@@ -73,6 +120,14 @@ export default function ChapterPlayerScreen() {
         {step.kind === 'exercises' ? (
           <ExercisesView
             step={step}
+            idx={exerciseIdx}
+            setIdx={setExerciseIdx}
+            solved={solved}
+            setSolved={setSolved}
+            found={found}
+            setFound={setFound}
+            message={exerciseMessage}
+            setMessage={setExerciseMessage}
             onNext={() => setStepIndex(4)}
             onBack={() => setStepIndex(2)}
           />
@@ -81,7 +136,12 @@ export default function ChapterPlayerScreen() {
         {step.kind === 'quiz' ? (
           <QuizView
             step={step}
+            isLast={isLastChapter(chapter.id)}
             chapterContext={chapter.title}
+            answers={answers}
+            setAnswers={setAnswers}
+            submitted={quizSubmitted}
+            setSubmitted={setQuizSubmitted}
             onBack={() => setStepIndex(3)}
             onPass={async () => {
               await completeChapter(chapter.id);
@@ -111,10 +171,14 @@ function ExplanationView({
 
 function DemoView({
   step,
+  seen,
+  onSeen,
   onNext,
   onBack,
 }: {
   step: DemoStep;
+  seen: boolean;
+  onSeen: () => void;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -134,22 +198,42 @@ function DemoView({
     setPlaying(true);
     setFen(step.fen);
     setLastMove(null);
-    const game = new Chess(step.fen);
+    let game = new Chess(step.fen);
+    let finished = true;
     for (const m of step.moves) {
       await wait(650);
       try {
-        game.move({
+        if (m.fen) {
+          game = new Chess(m.fen);
+          setFen(game.fen());
+          setLastMove(null);
+          await wait(700);
+        }
+        const promotion =
+          m.promotion === 'q' ||
+          m.promotion === 'r' ||
+          m.promotion === 'b' ||
+          m.promotion === 'n'
+            ? m.promotion
+            : undefined;
+        const played = game.move({
           from: m.from as Square,
           to: m.to as Square,
-          promotion: (m.promotion as 'q') || undefined,
+          promotion,
         });
+        if (!played) {
+          finished = false;
+          break;
+        }
         setFen(game.fen());
-        setLastMove({ from: m.from as Square, to: m.to as Square });
+        setLastMove({ from: played.from, to: played.to });
       } catch {
+        finished = false;
         break;
       }
     }
     setPlaying(false);
+    if (finished) onSeen();
   }
 
   return (
@@ -158,7 +242,9 @@ function DemoView({
       <Text style={styles.hint}>{strings.demoHint}</Text>
       <BoardStage fen={fen} lastMove={lastMove} interactive={false} />
       <PrimaryButton
-        label={playing ? 'جارٍ العرض…' : 'أعد العرض'}
+        label={
+          playing ? strings.demoPlaying : seen ? strings.demoReplay : strings.demoWatch
+        }
         variant="secondary"
         onPress={() => void playDemo()}
         disabled={playing}
@@ -248,7 +334,9 @@ function InteractiveView({
         legalTargets={targets}
         onSquarePress={onSquarePress}
       />
-      {message ? <Text style={styles.feedback}>{message}</Text> : null}
+      {message ? (
+        <Text style={done ? styles.feedback : styles.feedbackBad}>{message}</Text>
+      ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!done} />
     </View>
   );
@@ -256,25 +344,53 @@ function InteractiveView({
 
 function ExercisesView({
   step,
+  idx,
+  setIdx,
+  solved,
+  setSolved,
+  found,
+  setFound,
+  message,
+  setMessage,
   onNext,
   onBack,
 }: {
   step: ExercisesStep;
+  idx: number;
+  setIdx: React.Dispatch<React.SetStateAction<number>>;
+  solved: Record<string, boolean>;
+  setSolved: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  found: Record<string, Square[]>;
+  setFound: React.Dispatch<React.SetStateAction<Record<string, Square[]>>>;
+  message: string | null;
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   onNext: () => void;
   onBack: () => void;
 }) {
-  const [idx, setIdx] = useState(0);
-  const [solved, setSolved] = useState<Record<string, boolean>>({});
-  const item: ExerciseItem = step.items[idx]!;
+  const item: ExerciseItem = step.items[idx] ?? step.items[0]!;
+  const foundSquares = found[item.id] ?? [];
   const allDone = step.items.every((i) => solved[i.id]);
 
   function onSquarePress(square: Square) {
     if (solved[item.id]) return;
-    if (item.correctSquares.includes(square)) {
-      setSolved((s) => ({ ...s, [item.id]: true }));
-      if (idx < step.items.length - 1) {
-        setTimeout(() => setIdx((n) => n + 1), 500);
-      }
+    if (!item.correctSquares.includes(square)) {
+      setMessage(strings.exerciseRetry);
+      return;
+    }
+    if (foundSquares.includes(square)) return;
+    const next = [...foundSquares, square];
+    setFound((current) => ({ ...current, [item.id]: next }));
+    setMessage(null);
+    const complete = item.correctSquares.every((target) =>
+      next.includes(target as Square),
+    );
+    if (!complete) return;
+    setSolved((current) => ({ ...current, [item.id]: true }));
+    if (idx < step.items.length - 1) {
+      setTimeout(() => {
+        setIdx((n) => n + 1);
+        setMessage(null);
+      }, 500);
     }
   }
 
@@ -287,12 +403,17 @@ function ExercisesView({
       </Text>
       <BoardStage
         fen={item.fen}
-        highlighted={solved[item.id] ? (item.correctSquares as Square[]) : []}
+        highlighted={foundSquares}
         onSquarePress={onSquarePress}
       />
-      {solved[item.id] ? (
-        <Text style={styles.feedback}>صحيح!</Text>
-      ) : item.hint ? (
+      {message ? <Text style={styles.feedbackBad}>{message}</Text> : null}
+      {solved[item.id] ? <Text style={styles.feedback}>صحيح!</Text> : null}
+      {!solved[item.id] && item.correctSquares.length > 1 ? (
+        <Text style={styles.hint}>
+          {exercisePartialLabel(foundSquares.length, item.correctSquares.length)}
+        </Text>
+      ) : null}
+      {!solved[item.id] && item.hint ? (
         <Text style={styles.hint}>{item.hint}</Text>
       ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!allDone} />
@@ -302,18 +423,25 @@ function ExercisesView({
 
 function QuizView({
   step,
+  isLast,
   chapterContext,
+  answers,
+  setAnswers,
+  submitted,
+  setSubmitted,
   onBack,
   onPass,
 }: {
   step: QuizStep;
+  isLast: boolean;
   chapterContext: string;
+  answers: Record<string, number>;
+  setAnswers: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  submitted: boolean;
+  setSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
   onBack: () => void;
   onPass: () => Promise<void>;
 }) {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-
   const score = useMemo(() => {
     return step.questions.reduce((acc, q) => {
       return acc + (answers[q.id] === q.correctIndex ? 1 : 0);
@@ -325,8 +453,12 @@ function QuizView({
   return (
     <View style={styles.block}>
       <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{strings.quizHint}</Text>
-      <Text style={styles.caption}>{strings.passQuiz}</Text>
+      <Text style={styles.hint}>
+        {isLast ? strings.quizHintFinal : strings.quizHint}
+      </Text>
+      <Text style={styles.caption}>
+        {isLast ? strings.passQuizFinal : strings.passQuiz}
+      </Text>
 
       {step.questions.map((q, qi) => (
         <View key={q.id} style={styles.quizBlock}>
@@ -389,9 +521,11 @@ function QuizView({
       <PrimaryButton label={strings.prevStep} variant="ghost" onPress={onBack} />
 
       <GenieLampTutor
-        fen="8/8/8/8/8/8/8/R7 w - - 0 1"
+        fen={step.tutorFen ?? 'k7/8/8/8/8/8/8/4R2K w - - 0 1'}
         chapterContext={chapterContext}
-        cannedPrompts={['اشرح حركة الرخ', 'ما الفرق بين الرخ والقلعة؟']}
+        cannedPrompts={
+          step.tutorPrompts ?? ['اشرح حركة الرخ', 'ما الفرق بين الرخ والقلعة؟']
+        }
       />
     </View>
   );
@@ -476,6 +610,12 @@ const styles = StyleSheet.create({
   feedback: {
     ...typography.subtitle,
     color: colors.success,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  feedbackBad: {
+    ...typography.body,
+    color: colors.danger,
     textAlign: 'right',
     writingDirection: 'rtl',
   },

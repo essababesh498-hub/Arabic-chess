@@ -15,6 +15,7 @@ export const strings = {
   learnTitle: 'تعلّم',
   learnSubtitle: 'فصول للمبتدئين — كل فصل بخمس مراحل',
   chapterLocked: 'مغلق',
+  chapterLockedHint: 'أكمل الفصل السابق لفتح هذا الفصل',
   chapterCompleted: 'مكتمل',
   chapterAvailable: 'متاح',
   startChapter: 'ابدأ الفصل',
@@ -22,6 +23,7 @@ export const strings = {
   nextStep: 'التالي',
   prevStep: 'السابق',
   passQuiz: 'اجتز الاختبار لفتح الفصل التالي',
+  passQuizFinal: 'اجتز الاختبار لإكمال المنهج',
   quizPass: 'أحسنت! اجتزت الاختبار',
   quizFail: 'حاول مجدداً',
   stepExplanation: 'شرح',
@@ -71,7 +73,21 @@ export const strings = {
   languageFixed: 'اللغة: العربية (ثابتة في النسخة الحالية)',
 
   demoHint: 'شاهد الحركة على اللوحة',
+  demoWatch: 'شاهد العرض',
+  demoReplay: 'أعد العرض',
+  demoPlaying: 'جارٍ العرض…',
   interactiveHint: 'حرّك القطعة كما يُطلب منك',
   exerciseHint: 'اختر المربعات الصحيحة',
+  exerciseRetry: 'حاول مجدداً — هذا المربع ليس من الإجابة.',
   quizHint: 'أجب عن الأسئلة لفتح الفصل التالي',
+  quizHintFinal: 'أجب عن الأسئلة لإكمال المنهج',
 } as const;
+
+/** Shown while a multi-square exercise is still incomplete. */
+export function exercisePartialLabel(found: number, total: number): string {
+  const progress =
+    found === 0
+      ? `المطلوب ${total} مربعات`
+      : `${found} من ${total} صحيحة`;
+  return `${progress}. ما زال هناك مربعات مطلوبة.`;
+}
