@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "scheme": "arabic-chess",
     "newArchEnabled": true,
     "plugins": [
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1B3A2F",
+        "backgroundColor": "#090A0D",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

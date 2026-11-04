@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { ActionCard } from '@/components/ui/ActionCard';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { useCopy } from '@/context/LocaleContext';
 import { useProgress } from '@/context/ProgressContext';
 import type { AiStrength } from '@/lib/chess/ai';
-import { TERMS } from '@/lib/glossary';
-import { strings } from '@/lib/strings';
-import { colors, radii, spacing, typography } from '@/lib/theme';
+import { colors, spacing, typography } from '@/lib/theme';
 
 export default function PlaySetupScreen() {
   const { progress } = useProgress();
+  const copy = useCopy();
   const [color, setColor] = useState<'white' | 'black'>('white');
   const [strength, setStrength] = useState<AiStrength>(progress.defaultAiStrength);
 
@@ -26,58 +28,82 @@ export default function PlaySetupScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.subtitle}>{strings.playSubtitle}</Text>
+      <Text style={styles.subtitle}>{copy.playSubtitle}</Text>
+      <Text style={styles.label}>{copy.modesTitle}</Text>
 
-      <Text style={styles.label}>اللون</Text>
-      <View style={styles.segment}>
-        {(
-          [
-            ['white', strings.playAsWhite],
-            ['black', strings.playAsBlack],
-          ] as const
-        ).map(([value, label]) => (
-          <Pressable
-            key={value}
-            onPress={() => setColor(value)}
-            style={[styles.segBtn, color === value && styles.segActive]}
-          >
-            <Text style={[styles.segText, color === value && styles.segTextActive]}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
+      <ActionCard
+        title={copy.modeClassic}
+        body={copy.modeClassicBody}
+        badge={copy.chapterAvailable}
+      />
+
+      <View style={styles.setup}>
+        <Text style={styles.label}>{copy.colorLabel}</Text>
+        <SegmentedControl
+          value={color}
+          onChange={setColor}
+          options={[
+            { value: 'white', label: copy.playAsWhite },
+            { value: 'black', label: copy.playAsBlack },
+          ]}
+        />
+
+        <Text style={styles.label}>{copy.strength}</Text>
+        <SegmentedControl<AiStrength>
+          value={strength}
+          onChange={setStrength}
+          options={[
+            { value: 'easy', label: copy.strengthEasy },
+            { value: 'medium', label: copy.strengthMedium },
+            { value: 'hard', label: copy.strengthHard },
+          ]}
+        />
+
+        <PrimaryButton label={copy.startGame} onPress={start} />
       </View>
 
-      <Text style={styles.label}>{strings.strength}</Text>
-      <View style={styles.segment}>
-        {(
-          [
-            ['easy', TERMS.easy],
-            ['medium', TERMS.medium],
-            ['hard', TERMS.hard],
-          ] as const
-        ).map(([value, label]) => (
-          <Pressable
-            key={value}
-            onPress={() => setStrength(value)}
-            style={[styles.segBtn, strength === value && styles.segActive]}
-          >
-            <Text
-              style={[styles.segText, strength === value && styles.segTextActive]}
-            >
-              {label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <PrimaryButton label={strings.startGame} onPress={start} style={{ marginTop: 12 }} />
+      <ActionCard
+        title={copy.modeCasual}
+        body={copy.modeCasualBody}
+        badge={copy.unavailable}
+        available={false}
+      />
+      <ActionCard
+        title={copy.modePuzzle}
+        body={copy.modePuzzleBody}
+        badge={copy.unavailable}
+        available={false}
+      />
+      <ActionCard
+        title={copy.modeKnight}
+        body={copy.modeKnightBody}
+        badge={copy.unavailable}
+        available={false}
+      />
+      <ActionCard
+        title={copy.modeEndgame}
+        body={copy.modeEndgameBody}
+        badge={copy.unavailable}
+        available={false}
+      />
+      <ActionCard
+        title={copy.modeDaily}
+        body={copy.modeDailyBody}
+        badge={copy.unavailable}
+        available={false}
+      />
+      <ActionCard
+        title={copy.modeRanked}
+        body={copy.modeRankedBody}
+        badge={copy.unavailable}
+        available={false}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: colors.background },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -94,31 +120,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
     textAlign: 'right',
     writingDirection: 'rtl',
-    marginTop: spacing.sm,
   },
-  segment: {
-    flexDirection: 'row-reverse',
-    backgroundColor: colors.sandSoft,
-    borderRadius: radii.md,
-    padding: 4,
-    gap: 4,
-  },
-  segBtn: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segActive: {
-    backgroundColor: colors.boardFrame,
-  },
-  segText: {
-    ...typography.button,
-    color: colors.ink,
-    fontSize: 15,
-  },
-  segTextActive: {
-    color: colors.cream,
+  setup: {
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
 });

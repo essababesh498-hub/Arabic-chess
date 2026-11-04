@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { brand } from '@/lib/brand';
+import { useLocale } from '@/context/LocaleContext';
 import { colors, spacing, typography } from '@/lib/theme';
 
 const PHONE_WIDTH = 420;
@@ -11,13 +13,14 @@ const PHONE_MAX_HEIGHT = 860;
  */
 export function WebDesktopShell({ children }: { children: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
+  const { copy, locale } = useLocale();
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
-    document.documentElement.lang = 'ar';
+    document.documentElement.lang = locale;
     document.documentElement.dir = 'rtl';
-    document.body.style.backgroundColor = '#1A1714';
-  }, []);
+    document.body.style.backgroundColor = colors.background;
+  }, [locale]);
 
   if (Platform.OS !== 'web' || width < 720) {
     return <View style={styles.fill}>{children}</View>;
@@ -27,7 +30,9 @@ export function WebDesktopShell({ children }: { children: React.ReactNode }) {
 
   return (
     <View style={styles.desktopBackdrop} accessibilityLabel="محاكي سطح المكتب">
-      <Text style={styles.hint}>محاكي سطح المكتب · Arabic Chess</Text>
+      <Text style={styles.hint}>
+        {copy.desktopHint} · {brand.name}
+      </Text>
       <View
         style={[
           styles.phoneFrame,
@@ -49,7 +54,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#1A1714',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.lg,
@@ -57,16 +62,16 @@ const styles = StyleSheet.create({
   },
   hint: {
     ...typography.caption,
-    color: colors.sandSoft,
+    color: colors.silver,
     textAlign: 'center',
     writingDirection: 'rtl',
   },
   phoneFrame: {
-    backgroundColor: '#0F0E0C',
+    backgroundColor: '#14161C',
     borderRadius: 28,
     padding: 10,
-    borderWidth: 2,
-    borderColor: '#3A342C',
+    borderWidth: 1,
+    borderColor: '#3A4150',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.45,
@@ -83,7 +88,7 @@ const styles = StyleSheet.create({
   },
   phoneScreen: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.background,
     borderRadius: 18,
     overflow: 'hidden',
   },

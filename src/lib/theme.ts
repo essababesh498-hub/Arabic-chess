@@ -1,46 +1,48 @@
 /**
- * Design tokens — Arabic Chess (working name)
+ * Premium dark tokens.
  *
- * Mood: naturally Arabic everyday life — hospitality, warm wood/brass/linen,
- * calm home light. NOT forced “Oriental” kitsch, purple neon, or Aladdin parody.
+ * Charcoal and black surfaces, crisp white type, silver structure,
+ * and a restrained gold accent. The board squares stay high-contrast
+ * black and white. This replaces the warm plaster / olive-wood scaffold.
  *
- * Visual direction (scaffold → later art):
- * - Tilted top-down 3D board + 3D pieces (BoardStage)
- * - Genie lamp as a warm household object + friendly mentor (GenieLampTutor)
- * - Chess.com-like IA (learn / play / tips), non-flat material feel
- *
- * TODO(art): soft fabric/wood texture layers, lamp brass highlights, ambient
- * room light — keep saturation gentle.
+ * 3D pieces are not part of this theme. BoardStage still draws the flat board.
  */
 
 export const colors = {
-  /** Deep ink for Arabic body text */
-  ink: '#1A1714',
-  inkMuted: '#5C534A',
-  /** Warm plaster / linen page */
-  cream: '#F2EBE1',
-  /** Brass / hospitality accent (soft, not glittery) */
-  sand: '#B0894F',
-  sandSoft: '#E8DCC8',
-  /** Board — olive wood / green felt family */
-  boardDark: '#3E5C48',
-  boardLight: '#E4D4B5',
-  boardFrame: '#2A3F34',
-  /** Soft saffron for focus — restrained */
-  accent: '#C4922A',
-  accentSoft: '#F0E2C0',
-  danger: '#9A4540',
-  success: '#3A6B52',
-  surface: '#FFFBF5',
-  surfaceMuted: '#F6F0E6',
-  border: '#D8CFC0',
-  highlight: 'rgba(196, 146, 42, 0.38)',
-  lastMove: 'rgba(62, 92, 72, 0.32)',
-  check: 'rgba(154, 69, 64, 0.42)',
-  /** Lamp / genie UI */
-  lampBrass: '#A67C3D',
-  lampGlow: 'rgba(240, 226, 192, 0.9)',
-  genieMist: 'rgba(232, 220, 200, 0.85)',
+  background: '#090A0D',
+  backgroundRaised: '#12141A',
+  surface: '#171A21',
+  surfaceMuted: '#212530',
+  /** Primary text on dark surfaces */
+  ink: '#F5F7FA',
+  inkMuted: '#A7B0BE',
+  /** Light text and primary-button fill */
+  ivory: '#F7F8FA',
+  /** Near-black text on ivory or gold */
+  onAccent: '#101114',
+  /** @deprecated alias of ivory — leftover light-on-dark text */
+  cream: '#F7F8FA',
+  silver: '#C5CCD6',
+  /** Restrained gold */
+  accent: '#C6A15B',
+  accentSoft: '#E4D2A4',
+  sand: '#C6A15B',
+  /** Raised track behind segmented controls */
+  sandSoft: '#232833',
+  /** High-contrast squares. Coordinates use the opposite square color. */
+  boardDark: '#14161C',
+  boardLight: '#F3F4F6',
+  boardFrame: '#3A4150',
+  danger: '#E07A72',
+  success: '#7DCEA0',
+  border: 'rgba(197, 204, 214, 0.16)',
+  highlight: 'rgba(198, 161, 91, 0.42)',
+  lastMove: 'rgba(197, 204, 214, 0.28)',
+  check: 'rgba(224, 122, 114, 0.45)',
+  moveHint: 'rgba(198, 161, 91, 0.92)',
+  lampBrass: '#C6A15B',
+  lampGlow: 'rgba(198, 161, 91, 0.16)',
+  genieMist: 'rgba(255, 255, 255, 0.06)',
 } as const;
 
 export const spacing = {
@@ -53,26 +55,27 @@ export const spacing = {
 } as const;
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 20,
+  sm: 10,
+  md: 16,
+  lg: 22,
+  pill: 999,
 } as const;
 
-export const textures = {
-  /**
-   * Scaffold notes only — no image assets yet.
-   * Prefer: plaster wash, olive-wood grain, linen weave, soft brass — subtle.
-   * Avoid: ornate damask overload, cartoon magic carpets, heavy filigree chrome.
-   */
-  notes:
-    'Warm plaster + linen backgrounds; olive-wood board frame; brass lamp as home object.',
+export const shadows = {
+  card: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
 } as const;
 
 export const typography = {
   brand: {
     fontFamily: 'IBMPlexSansArabic_700Bold',
-    fontSize: 36,
-    lineHeight: 48,
+    fontSize: 34,
+    lineHeight: 46,
   },
   title: {
     fontFamily: 'IBMPlexSansArabic_700Bold',
@@ -96,7 +99,7 @@ export const typography = {
   },
   button: {
     fontFamily: 'IBMPlexSansArabic_600SemiBold',
-    fontSize: 17,
+    fontSize: 16,
     lineHeight: 24,
   },
 } as const;

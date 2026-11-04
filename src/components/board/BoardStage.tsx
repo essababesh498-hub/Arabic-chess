@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Square } from 'chess.js';
 import { Board2DFallback } from '@/components/board/Board2DFallback';
+import { useCopy } from '@/context/LocaleContext';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 /**
@@ -29,12 +30,13 @@ export type BoardStageProps = {
 };
 
 export function BoardStage(props: BoardStageProps) {
+  const copy = useCopy();
   return (
     <View style={styles.wrap}>
       {!props.hideScaffoldBadge ? (
         <View style={styles.badge} accessibilityLabel="لوحة مؤقتة ثنائية الأبعاد">
-          <Text style={styles.badgeText}>لوحة ٢ب مؤقتة</Text>
-          <Text style={styles.badgeHint}>قريباً: لوحة ثلاثية الأبعاد مائلة + قطع ٣ب</Text>
+          <Text style={styles.badgeText}>{copy.boardBadge}</Text>
+          <Text style={styles.badgeHint}>{copy.boardBadgeHint}</Text>
         </View>
       ) : null}
       {/* TODO(3d-board): <Board3DScene {...props} /> */}

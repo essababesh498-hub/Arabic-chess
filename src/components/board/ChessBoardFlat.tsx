@@ -180,12 +180,12 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: 'rgba(15, 31, 24, 0.35)',
+    backgroundColor: colors.moveHint,
   },
   captureRing: {
     ...StyleSheet.absoluteFill,
     borderWidth: 3,
-    borderColor: 'rgba(15, 31, 24, 0.45)',
+    borderColor: colors.moveHint,
     borderRadius: 4,
   },
   coord: {

@@ -7,13 +7,15 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { GenieLampTutor } from '@/components/tutor/GenieLampTutor';
 import { useProgress } from '@/context/ProgressContext';
 import { applyMove, chooseAiMove, type AiStrength } from '@/lib/chess/ai';
+import { useCopy } from '@/context/LocaleContext';
 import { TERMS } from '@/lib/glossary';
-import { strings } from '@/lib/strings';
+import { catalogs } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 export default function GameScreen() {
+  const copy = useCopy();
   const params = useLocalSearchParams<{
     color?: string;
     strength?: string;
@@ -45,14 +47,14 @@ export default function GameScreen() {
         const playerWon =
           (g.turn() === 'b' && playerIsWhite) ||
           (g.turn() === 'w' && !playerIsWhite);
-        setStatus(playerWon ? strings.youWin : strings.youLose);
+        setStatus(playerWon ? copy.youWin : copy.youLose);
         if (!recordedRef.current) {
           recordedRef.current = true;
           await recordGame();
         }
       } else if (g.isDraw() || g.isStalemate()) {
         setStatus(
-          g.isStalemate() ? `${strings.draw} (${TERMS.stalemate})` : strings.draw,
+          g.isStalemate() ? `${copy.draw} (${TERMS.stalemate})` : copy.draw,
         );
         if (!recordedRef.current) {
           recordedRef.current = true;
@@ -64,12 +66,17 @@ export default function GameScreen() {
         setStatus(null);
       }
     },
-    [playerIsWhite, recordGame],
+    [copy, playerIsWhite, recordGame],
   );
 
   // AI move when it's the computer's turn
   useEffect(() => {
-    if (status === strings.youWin || status === strings.youLose) return;
+    const matchOver =
+      status === catalogs.ar.youWin ||
+      status === catalogs.ar.youLose ||
+      status === catalogs.en.youWin ||
+      status === catalogs.en.youLose;
+    if (matchOver) return;
     if (isPlayerTurn) return;
     if (game.isGameOver()) return;
 
@@ -149,6 +156,13 @@ export default function GameScreen() {
   }
 
   const turnLabel = isPlayerTurn ? TERMS.yourTurn : TERMS.aiTurn;
+  const matchTitle = `${copy.vsComputer} · ${
+    strength === 'easy'
+      ? copy.strengthEasy
+      : strength === 'medium'
+        ? copy.strengthMedium
+        : copy.strengthHard
+  }`;
 
   return (
     <ScrollView
@@ -158,13 +172,8 @@ export default function GameScreen() {
     >
       <Stack.Screen
         options={{
-          title: `ضد الكمبيوتر · ${
-            strength === 'easy'
-              ? TERMS.easy
-              : strength === 'medium'
-                ? TERMS.medium
-                : TERMS.hard
-          }`,
+          title: matchTitle,
+          headerTitle: matchTitle,
         }}
       />
 
@@ -185,16 +194,16 @@ export default function GameScreen() {
 
       <View style={styles.actions}>
         <PrimaryButton
-          label={strings.newGame}
+          label={copy.newGame}
           variant="secondary"
           onPress={resetGame}
           style={{ flex: 1 }}
         />
         <PrimaryButton
-          label={strings.resign}
+          label={copy.resign}
           variant="ghost"
           onPress={() => {
-            setStatus(strings.youLose);
+            setStatus(copy.youLose);
             if (!recordedRef.current) {
               recordedRef.current = true;
               void recordGame();
@@ -205,7 +214,7 @@ export default function GameScreen() {
       </View>
 
       <PrimaryButton
-        label="إعدادات المباراة"
+        label={copy.matchSetup}
         variant="ghost"
         onPress={() => router.replace('/play')}
       />
@@ -216,7 +225,7 @@ export default function GameScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: colors.background },
   content: {
     padding: spacing.lg,
     gap: spacing.md,

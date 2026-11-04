@@ -1,14 +1,59 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradientFallback } from '@/components/LinearGradientFallback';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { useProgress } from '@/context/ProgressContext';
-import { strings } from '@/lib/strings';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useCopy } from '@/context/LocaleContext';
+import { brand } from '@/lib/brand';
+import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function HomeScreen() {
   const { progress } = useProgress();
+  const copy = useCopy();
+  const opacity = useRef(new Animated.Value(0)).current;
+  const rise = useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (!active) return;
+        if (reduce) {
+          opacity.setValue(1);
+          rise.setValue(0);
+          return;
+        }
+        const nativeDriver = Platform.OS !== 'web';
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 420,
+            useNativeDriver: nativeDriver,
+          }),
+          Animated.timing(rise, {
+            toValue: 0,
+            duration: 420,
+            useNativeDriver: nativeDriver,
+          }),
+        ]).start();
+      })
+      .catch(() => {
+        opacity.setValue(1);
+        rise.setValue(0);
+      });
+    return () => {
+      active = false;
+    };
+  }, [opacity, rise]);
 
   return (
     <ScrollView
@@ -17,39 +62,47 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradientFallback style={styles.hero}>
-        <Text style={styles.brand}>{strings.appName}</Text>
-        <Text style={styles.tagline}>{strings.tagline}</Text>
-        <Text style={styles.welcome}>{strings.homeSubtitle}</Text>
-        <View style={styles.ctaRow}>
-          <PrimaryButton
-            label={strings.ctaLearn}
-            onPress={() => router.push('/learn')}
-            style={styles.cta}
-          />
-          <PrimaryButton
-            label={strings.ctaPlay}
-            variant="secondary"
-            onPress={() => router.push('/play')}
-            style={styles.cta}
-          />
-        </View>
+        <Text style={styles.eyebrow}>{brand.name}</Text>
+        <Text style={styles.tagline}>{copy.tagline}</Text>
+        <Text style={styles.welcome}>{copy.homeSubtitle}</Text>
       </LinearGradientFallback>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{strings.progressTitle}</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{progress.completedChapterIds.length}</Text>
-            <Text style={styles.statLabel}>{strings.chaptersDone}</Text>
+      <Animated.View
+        style={[styles.stack, { opacity, transform: [{ translateY: rise }] }]}
+      >
+        <ActionCard
+          title={copy.navPlay}
+          body={copy.homePlayBody}
+          onPress={() => router.push('/play')}
+        />
+        <ActionCard
+          title={copy.navLearn}
+          body={copy.homeLearnBody}
+          onPress={() => router.push('/learn')}
+        />
+        <ActionCard
+          title={copy.competeTitle}
+          body={copy.competeBody}
+          badge={copy.unavailable}
+          available={false}
+        />
+
+        <View style={styles.progress}>
+          <Text style={styles.sectionTitle}>{copy.progressTitle}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{progress.completedChapterIds.length}</Text>
+              <Text style={styles.statLabel}>{copy.chaptersDone}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{progress.gamesPlayed}</Text>
+              <Text style={styles.statLabel}>{copy.gamesPlayed}</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{progress.gamesPlayed}</Text>
-            <Text style={styles.statLabel}>{strings.gamesPlayed}</Text>
-          </View>
+          <Text style={styles.guestNote}>{copy.guestBadge}</Text>
         </View>
-        <Text style={styles.guestNote}>{strings.guestBadge}</Text>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -57,49 +110,49 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: spacing.xxl,
+    gap: spacing.lg,
   },
   hero: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
-    minHeight: 320,
-    justifyContent: 'flex-end',
+    paddingBottom: spacing.lg,
     gap: spacing.sm,
   },
-  brand: {
-    ...typography.brand,
-    color: colors.cream,
+  eyebrow: {
+    ...typography.caption,
+    color: colors.accent,
     textAlign: 'right',
     writingDirection: 'rtl',
+    letterSpacing: 0.4,
   },
   tagline: {
-    ...typography.subtitle,
-    color: colors.accentSoft,
+    ...typography.brand,
+    color: colors.ink,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   welcome: {
     ...typography.body,
-    color: colors.sandSoft,
+    color: colors.inkMuted,
     textAlign: 'right',
     writingDirection: 'rtl',
-    marginBottom: spacing.sm,
   },
-  ctaRow: {
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  cta: {
-    alignSelf: 'stretch',
-  },
-  section: {
+  stack: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
     gap: spacing.md,
+  },
+  progress: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.sm,
+    ...shadows.card,
   },
   sectionTitle: {
     ...typography.subtitle,
@@ -111,7 +164,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   stat: {
     alignItems: 'center',
@@ -120,7 +173,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.title,
-    color: colors.boardFrame,
+    color: colors.ivory,
   },
   statLabel: {
     ...typography.caption,

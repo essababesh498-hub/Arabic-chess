@@ -3,16 +3,17 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { router } from 'expo-router';
 import { CHAPTERS, isChapterUnlocked } from '@/lib/curriculum/chapters';
 import { useProgress } from '@/context/ProgressContext';
-import { strings } from '@/lib/strings';
-import { colors, radii, spacing, typography } from '@/lib/theme';
+import { useCopy } from '@/context/LocaleContext';
+import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function LearnListScreen() {
   const { progress, ready } = useProgress();
+  const copy = useCopy();
 
   if (!ready) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={colors.boardFrame} size="large" />
+        <ActivityIndicator color={colors.accent} size="large" />
       </View>
     );
   }
@@ -23,7 +24,7 @@ export default function LearnListScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.subtitle}>{strings.learnSubtitle}</Text>
+      <Text style={styles.subtitle}>{copy.learnSubtitle}</Text>
 
       {CHAPTERS.map((chapter) => {
         const done = progress.completedChapterIds.includes(chapter.id);
@@ -41,9 +42,9 @@ export default function LearnListScreen() {
                 <Text style={styles.rowTitle}>{chapter.title}</Text>
                 <Text style={styles.rowSummary}>{chapter.summary}</Text>
                 <Text style={[styles.rowStatus, styles.rowStatusLocked]}>
-                  {strings.chapterLocked}
+                  {copy.chapterLocked}
                 </Text>
-                <Text style={styles.rowSummary}>{strings.chapterLockedHint}</Text>
+                <Text style={styles.rowSummary}>{copy.chapterLockedHint}</Text>
               </View>
             </View>
           );
@@ -62,7 +63,7 @@ export default function LearnListScreen() {
               <Text style={styles.rowTitle}>{chapter.title}</Text>
               <Text style={styles.rowSummary}>{chapter.summary}</Text>
               <Text style={styles.rowStatus}>
-                {done ? strings.chapterCompleted : strings.chapterAvailable}
+                {done ? copy.chapterCompleted : copy.chapterAvailable}
               </Text>
             </View>
           </Pressable>
@@ -77,9 +78,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.cream,
+    backgroundColor: colors.background,
   },
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: colors.background },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -95,9 +96,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row-reverse',
     gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
   },
   pressed: { opacity: 0.75 },
   locked: { opacity: 0.55 },
@@ -105,14 +109,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radii.sm,
-    backgroundColor: colors.boardFrame,
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   numLocked: { backgroundColor: colors.inkMuted },
   numText: {
     ...typography.subtitle,
-    color: colors.cream,
+    color: colors.onAccent,
   },
   rowBody: { flex: 1, gap: 4 },
   rowTitle: {

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Chess } from 'chess.js';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import { strings } from '@/lib/strings';
+import { useCopy } from '@/context/LocaleContext';
 import { askTutor } from '@/lib/tutor/client';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
@@ -36,6 +36,7 @@ export function GenieLampTutor({
   chapterContext,
   cannedPrompts = ['ما الحركة الأفضل؟', 'اشرح الوضع', 'هل الملك تحت كش؟'],
 }: Props) {
+  const copy = useCopy();
   const [input, setInput] = useState('');
   const [reply, setReply] = useState<string | null>(null);
   const [source, setSource] = useState<'llm' | 'fallback' | null>(null);
@@ -72,8 +73,8 @@ export function GenieLampTutor({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{strings.genieTitle}</Text>
-      <Text style={styles.subtitle}>{strings.genieSubtitle}</Text>
+      <Text style={styles.title}>{copy.genieTitle}</Text>
+      <Text style={styles.subtitle}>{copy.genieSubtitle}</Text>
 
       {/* Placeholder lamp — swap for art/3D prop later */}
       <Pressable
@@ -90,7 +91,7 @@ export function GenieLampTutor({
         <View style={styles.lampGlow} />
         <Text style={styles.lampGlyph}>🪔</Text>
         <Text style={styles.lampLabel}>
-          {loading ? strings.tutorThinking : strings.genieRub}
+          {loading ? copy.tutorThinking : copy.genieRub}
         </Text>
         <Text style={styles.lampTodo}>
           TODO: مصباح نحاسي منزلي + معلّم ودود (بدون كليشيه)
@@ -113,7 +114,7 @@ export function GenieLampTutor({
       <TextInput
         value={input}
         onChangeText={setInput}
-        placeholder={strings.tutorPlaceholder}
+        placeholder={copy.tutorPlaceholder}
         placeholderTextColor={colors.inkMuted}
         style={styles.input}
         textAlign="right"
@@ -121,7 +122,7 @@ export function GenieLampTutor({
         onSubmitEditing={() => void send(input)}
       />
       <PrimaryButton
-        label={loading ? strings.tutorThinking : strings.tutorSend}
+        label={loading ? copy.tutorThinking : copy.tutorSend}
         onPress={() => void send(input)}
         disabled={loading || !input.trim()}
       />
@@ -133,11 +134,11 @@ export function GenieLampTutor({
       {reply ? (
         <View style={styles.replyBox}>
           <Text style={styles.replyMeta}>
-            {source === 'llm' ? strings.geniePersona : strings.localTip}
+            {source === 'llm' ? copy.geniePersona : copy.localTip}
           </Text>
           <Text style={styles.reply}>{reply}</Text>
           {source === 'fallback' ? (
-            <Text style={styles.hint}>{strings.tutorUnavailable}</Text>
+            <Text style={styles.hint}>{copy.tutorUnavailable}</Text>
           ) : null}
         </View>
       ) : null}
