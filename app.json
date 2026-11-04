@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Arabic Chess",
+    "slug": "arabic-chess",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "arabic-chess",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.arabicchess.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1B3A2F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.arabicchess.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "supportsRTL": true,
+      "forcesRTL": true
+    }
+  }
+}
