@@ -1,7 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { LinearGradientFallback } from '@/components/LinearGradientFallback';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useProgress } from '@/context/ProgressContext';
 import { strings } from '@/lib/strings';
@@ -16,7 +15,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <LinearGradientFallback style={styles.hero}>
+      <View style={styles.hero}>
         <Text style={styles.brand}>{strings.appName}</Text>
         <Text style={styles.tagline}>{strings.tagline}</Text>
         <Text style={styles.welcome}>{strings.homeSubtitle}</Text>
@@ -33,7 +32,7 @@ export default function HomeScreen() {
             style={styles.cta}
           />
         </View>
-      </LinearGradientFallback>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{strings.progressTitle}</Text>
@@ -57,7 +56,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: 'transparent',
   },
   content: {
     paddingBottom: spacing.xxl,
@@ -103,7 +102,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.subtitle,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
@@ -120,22 +119,22 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.title,
-    color: colors.boardFrame,
+    color: colors.cream,
   },
   statLabel: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'center',
     writingDirection: 'rtl',
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(232, 220, 200, 0.45)',
   },
   guestNote: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },

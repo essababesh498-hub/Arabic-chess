@@ -22,6 +22,14 @@ export default function TabsLayout() {
           fontFamily: 'IBMPlexSansArabic_600SemiBold',
           fontSize: 12,
         },
+        // Web does not detach inactive tabs. A transparent scene would leave
+        // the previous screen visible underneath, so fade them out instantly.
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: 0 },
+        },
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,

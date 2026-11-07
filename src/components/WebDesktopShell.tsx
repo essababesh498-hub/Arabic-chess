@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   phoneScreen: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: 'transparent',
     borderRadius: 18,
     overflow: 'hidden',
   },

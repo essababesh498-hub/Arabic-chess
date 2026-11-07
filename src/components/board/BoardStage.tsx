@@ -1,18 +1,15 @@
-import React from 'react';
+import React, { Suspense, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Square } from 'chess.js';
 import { Board2DFallback } from '@/components/board/Board2DFallback';
+import { useBoardPixelSize } from '@/components/board/boardSize';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 /**
  * BoardStage — visual host for the chessboard.
  *
- * Design direction (Essa): tilted top-down **3D board + 3D pieces**
- * (not flat Chess.com chrome). IA stays Chess.com-like (learn / play / tips).
- *
- * TODO(3d-board): Replace Board2DFallback with a WebGL/Three (or Expo GL)
- * tilted board scene + 3D piece meshes. Keep this component's props stable so
- * Learn / Play / chapter demos do not need rewiring.
+ * The tilted 3D scene is the primary view. If it fails to load, the flat board
+ * is shown instead. Props stay stable for Learn and Play.
  */
 export type BoardStageProps = {
   fen: string;
@@ -26,27 +23,106 @@ export type BoardStageProps = {
   showCoordinates?: boolean;
   /** Hide the temporary 2D badge (e.g. in tight lesson layouts). */
   hideScaffoldBadge?: boolean;
+  /** Cap the board so the game table fits the phone without scrolling. */
+  maxSize?: number;
+  /** First-person frame for the game table. Lessons keep the square size. */
+  viewport?: { width: number; height: number };
 };
 
+const LazyBoard3D = React.lazy(() =>
+  import('@/components/board/Board3DScene').then((mod) => ({
+    default: mod.Board3DScene,
+  })),
+);
+
 export function BoardStage(props: BoardStageProps) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <View style={styles.wrap}>
+        {props.hideScaffoldBadge ? null : <ScaffoldBadge />}
+        <Board2DFallback {...props} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.wrap}>
-      {!props.hideScaffoldBadge ? (
-        <View style={styles.badge} accessibilityLabel="لوحة مؤقتة ثنائية الأبعاد">
-          <Text style={styles.badgeText}>لوحة ٢ب مؤقتة</Text>
-          <Text style={styles.badgeHint}>قريباً: لوحة ثلاثية الأبعاد مائلة + قطع ٣ب</Text>
+    <BoardErrorBoundary
+      onError={() => setFailed(true)}
+      fallback={
+        <View style={styles.wrap}>
+          {props.hideScaffoldBadge ? null : <ScaffoldBadge />}
+          <Board2DFallback {...props} />
         </View>
-      ) : null}
-      {/* TODO(3d-board): <Board3DScene {...props} /> */}
-      <Board2DFallback {...props} />
+      }
+    >
+      <Suspense fallback={<BoardPlaceholder maxSize={props.maxSize} viewport={props.viewport} />}>
+        <LazyBoard3D {...props} />
+      </Suspense>
+    </BoardErrorBoundary>
+  );
+}
+
+function BoardPlaceholder({
+  maxSize,
+  viewport,
+}: {
+  maxSize?: number;
+  viewport?: { width: number; height: number };
+}) {
+  const fitted = useBoardPixelSize(maxSize);
+  const width = viewport?.width ?? fitted;
+  const height = viewport?.height ?? fitted;
+  return <View style={[styles.placeholder, { width, height }]} />;
+}
+
+function ScaffoldBadge() {
+  return (
+    <View style={styles.badge} accessibilityLabel="لوحة مؤقتة ثنائية الأبعاد">
+      <Text style={styles.badgeText}>لوحة ٢ب مؤقتة</Text>
+      <Text style={styles.badgeHint}>تعذّر تحميل اللوحة ثلاثية الأبعاد</Text>
     </View>
   );
+}
+
+type BoundaryProps = {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  onError: () => void;
+};
+
+type BoundaryState = { failed: boolean };
+
+class BoardErrorBoundary extends React.Component<BoundaryProps, BoundaryState> {
+  state: BoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): BoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('3D board failed, showing the flat board.', error);
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.failed) return this.props.fallback;
+    return this.props.children;
+  }
 }
 
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.sm,
     alignItems: 'center',
+  },
+  placeholder: {
+    alignSelf: 'center',
+    borderRadius: 16,
+    backgroundColor: '#14110D',
+    borderWidth: 1,
+    borderColor: '#8A6428',
   },
   badge: {
     alignSelf: 'stretch',

@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Chess } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { strings } from '@/lib/strings';
 import { askTutor } from '@/lib/tutor/client';
@@ -49,7 +49,7 @@ export function GenieLampTutor({
     setReply(null);
     setLampRubbed(true);
     try {
-      const game = new Chess(fen);
+      const game = loadPosition(fen);
       const legalMoves = game.moves();
       const res = await askTutor({
         userMessage: trimmed,

@@ -77,7 +77,7 @@ export default function PlaySetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.body,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   label: {
     ...typography.subtitle,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
     marginTop: spacing.sm,

@@ -7,7 +7,8 @@ import {
   Pressable,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Chess, type Square } from 'chess.js';
+import type { Square } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { BoardStage } from '@/components/board/BoardStage';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { StepProgress } from '@/components/StepProgress';
@@ -134,7 +135,7 @@ function DemoView({
     setPlaying(true);
     setFen(step.fen);
     setLastMove(null);
-    const game = new Chess(step.fen);
+    const game = loadPosition(step.fen);
     for (const m of step.moves) {
       await wait(650);
       try {
@@ -193,7 +194,7 @@ function InteractiveView({
 
   function onSquarePress(square: Square) {
     if (done) return;
-    const game = new Chess(fen);
+    const game = loadPosition(fen);
     if (!selected) {
       const piece = game.get(square);
       if (!piece || piece.color !== game.turn()) return;
@@ -429,7 +430,7 @@ function wait(ms: number) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.cream },
+  root: { flex: 1, backgroundColor: 'transparent' },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -445,31 +446,31 @@ const styles = StyleSheet.create({
   block: { gap: spacing.md },
   title: {
     ...typography.title,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   subtitle: {
     ...typography.subtitle,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   body: {
     ...typography.body,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   hint: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   caption: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
@@ -497,11 +498,11 @@ const styles = StyleSheet.create({
   },
   optionCorrect: {
     borderColor: colors.success,
-    backgroundColor: 'rgba(42, 107, 79, 0.12)',
+    backgroundColor: '#E4F0E8',
   },
   optionWrong: {
     borderColor: colors.danger,
-    backgroundColor: 'rgba(166, 61, 61, 0.1)',
+    backgroundColor: '#F6E4E2',
   },
   optionText: {
     ...typography.body,

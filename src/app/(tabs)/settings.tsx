@@ -136,7 +136,7 @@ function Seg({
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: spacing.lg,
     gap: spacing.sm,
@@ -144,31 +144,31 @@ const styles = StyleSheet.create({
   },
   section: {
     ...typography.subtitle,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
     marginTop: spacing.md,
   },
   body: {
     ...typography.body,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   caption: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   glossaryRow: {
     ...typography.body,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
     paddingVertical: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(232, 220, 200, 0.35)',
   },
   segment: {
     flexDirection: 'row-reverse',

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { I18nManager, View, ActivityIndicator, StyleSheet } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, ThemeProvider, DefaultTheme } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
@@ -8,6 +8,7 @@ import {
   IBMPlexSansArabic_600SemiBold,
   IBMPlexSansArabic_700Bold,
 } from '@expo-google-fonts/ibm-plex-sans-arabic';
+import { AppBackground } from '@/components/AppBackground';
 import { WebDesktopShell } from '@/components/WebDesktopShell';
 import { ProgressProvider } from '@/context/ProgressContext';
 import { colors } from '@/lib/theme';
@@ -17,6 +18,14 @@ if (!I18nManager.isRTL) {
   I18nManager.allowRTL(true);
   I18nManager.forceRTL(true);
 }
+
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: 'transparent',
+  },
+};
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -42,10 +51,12 @@ export default function RootLayout() {
     <ProgressProvider>
       <StatusBar style="light" />
       <WebDesktopShell>
+        <AppBackground>
+        <ThemeProvider value={navTheme}>
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: colors.cream, flex: 1 },
+            contentStyle: { backgroundColor: 'transparent', flex: 1 },
             animation: 'fade',
           }}
         >
@@ -77,6 +88,8 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        </ThemeProvider>
+        </AppBackground>
       </WebDesktopShell>
     </ProgressProvider>
   );

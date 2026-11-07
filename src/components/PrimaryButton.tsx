@@ -42,7 +42,7 @@ export function PrimaryButton({
       <Text
         style={[
           styles.label,
-          (variant === 'secondary' || variant === 'ghost') && styles.labelDark,
+          variant === 'secondary' && styles.labelDark,
         ]}
       >
         {label}

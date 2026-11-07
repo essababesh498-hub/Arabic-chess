@@ -84,12 +84,12 @@ const styles = StyleSheet.create({
   label: {
     ...typography.caption,
     fontSize: 11,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'center',
     writingDirection: 'rtl',
   },
   labelActive: {
-    color: colors.ink,
+    color: colors.cream,
     fontFamily: 'IBMPlexSansArabic_600SemiBold',
   },
 });

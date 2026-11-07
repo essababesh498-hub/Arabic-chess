@@ -57,7 +57,7 @@ export default function LearnListScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  scroll: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.body,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
     marginBottom: spacing.sm,
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(232, 220, 200, 0.35)',
   },
   pressed: { opacity: 0.75 },
   locked: { opacity: 0.55 },
@@ -95,19 +95,19 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 4 },
   rowTitle: {
     ...typography.subtitle,
-    color: colors.ink,
+    color: colors.cream,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   rowSummary: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.sandSoft,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   rowStatus: {
     ...typography.caption,
-    color: colors.success,
+    color: '#D9FBE8',
     textAlign: 'right',
     writingDirection: 'rtl',
     fontFamily: 'IBMPlexSansArabic_600SemiBold',
