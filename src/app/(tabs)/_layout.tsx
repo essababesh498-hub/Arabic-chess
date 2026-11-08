@@ -2,10 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors } from '@/lib/theme';
 
 export default function TabsLayout() {
   const copy = useCopy();
+  const layout = useLocaleLayout();
 
   return (
     <Tabs
@@ -24,14 +26,22 @@ export default function TabsLayout() {
           fontFamily: 'IBMPlexSansArabic_600SemiBold',
           fontSize: 11,
         },
+        // Web does not detach inactive tabs. A transparent scene would leave
+        // the previous screen visible underneath, so fade them out instantly.
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: 0 },
+        },
         tabBarStyle: {
           backgroundColor: colors.backgroundRaised,
           borderTopColor: colors.border,
           height: 68,
           paddingBottom: 8,
           paddingTop: 6,
+          direction: layout.direction,
         },
-        sceneStyle: { backgroundColor: colors.background },
+        sceneStyle: { backgroundColor: colors.background, direction: layout.direction },
       }}
     >
       <Tabs.Screen

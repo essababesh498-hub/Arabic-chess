@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { ActionCard } from '@/components/ui/ActionCard';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { useProgress } from '@/context/ProgressContext';
 import type { AiStrength } from '@/lib/chess/ai';
 import { colors, spacing, typography } from '@/lib/theme';
@@ -12,6 +13,7 @@ import { colors, spacing, typography } from '@/lib/theme';
 export default function PlaySetupScreen() {
   const { progress } = useProgress();
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const [color, setColor] = useState<'white' | 'black'>('white');
   const [strength, setStrength] = useState<AiStrength>(progress.defaultAiStrength);
 
@@ -28,8 +30,8 @@ export default function PlaySetupScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.subtitle}>{copy.playSubtitle}</Text>
-      <Text style={styles.label}>{copy.modesTitle}</Text>
+      <Text style={[styles.subtitle, layout.block]}>{copy.playSubtitle}</Text>
+      <Text style={[styles.label, layout.block]}>{copy.modesTitle}</Text>
 
       <ActionCard
         title={copy.modeClassic}
@@ -38,7 +40,7 @@ export default function PlaySetupScreen() {
       />
 
       <View style={styles.setup}>
-        <Text style={styles.label}>{copy.colorLabel}</Text>
+        <Text style={[styles.label, layout.block]}>{copy.colorLabel}</Text>
         <SegmentedControl
           value={color}
           onChange={setColor}
@@ -48,7 +50,7 @@ export default function PlaySetupScreen() {
           ]}
         />
 
-        <Text style={styles.label}>{copy.strength}</Text>
+        <Text style={[styles.label, layout.block]}>{copy.strength}</Text>
         <SegmentedControl<AiStrength>
           value={strength}
           onChange={setStrength}

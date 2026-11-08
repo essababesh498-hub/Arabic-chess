@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, typography } from '@/lib/theme';
 
 type Option<T extends string> = {
@@ -18,8 +19,9 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
 }: Props<T>) {
+  const layout = useLocaleLayout();
   return (
-    <View style={styles.track}>
+    <View style={[styles.track, { flexDirection: layout.mirrorRow }]}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -30,7 +32,9 @@ export function SegmentedControl<T extends string>({
             onPress={() => onChange(option.value)}
             style={[styles.item, active && styles.itemActive]}
           >
-            <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
+            <Text style={[styles.label, layout.center, active && styles.labelActive]}>
+              {option.label}
+            </Text>
           </Pressable>
         );
       })}

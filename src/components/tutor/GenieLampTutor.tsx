@@ -7,9 +7,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Chess } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { askTutor } from '@/lib/tutor/client';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
@@ -37,6 +38,7 @@ export function GenieLampTutor({
   cannedPrompts = ['ما الحركة الأفضل؟', 'اشرح الوضع', 'هل الملك تحت كش؟'],
 }: Props) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const [input, setInput] = useState('');
   const [reply, setReply] = useState<string | null>(null);
   const [source, setSource] = useState<'llm' | 'fallback' | null>(null);
@@ -50,7 +52,7 @@ export function GenieLampTutor({
     setReply(null);
     setLampRubbed(true);
     try {
-      const game = new Chess(fen);
+      const game = loadPosition(fen);
       const legalMoves = game.moves();
       const res = await askTutor({
         userMessage: trimmed,
@@ -73,8 +75,8 @@ export function GenieLampTutor({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{copy.genieTitle}</Text>
-      <Text style={styles.subtitle}>{copy.genieSubtitle}</Text>
+      <Text style={[styles.title, layout.block]}>{copy.genieTitle}</Text>
+      <Text style={[styles.subtitle, layout.block]}>{copy.genieSubtitle}</Text>
 
       {/* Placeholder lamp — swap for art/3D prop later */}
       <Pressable
@@ -90,15 +92,15 @@ export function GenieLampTutor({
       >
         <View style={styles.lampGlow} />
         <Text style={styles.lampGlyph}>🪔</Text>
-        <Text style={styles.lampLabel}>
+        <Text style={[styles.lampLabel, layout.center]}>
           {loading ? copy.tutorThinking : copy.genieRub}
         </Text>
-        <Text style={styles.lampTodo}>
+        <Text style={[styles.lampTodo, layout.arabic]}>
           TODO: مصباح نحاسي منزلي + معلّم ودود (بدون كليشيه)
         </Text>
       </Pressable>
 
-      <View style={styles.chips}>
+      <View style={[styles.chips, { flexDirection: layout.mirrorRow }]}>
         {cannedPrompts.map((p) => (
           <PrimaryButton
             key={p}
@@ -117,7 +119,7 @@ export function GenieLampTutor({
         placeholder={copy.tutorPlaceholder}
         placeholderTextColor={colors.inkMuted}
         style={styles.input}
-        textAlign="right"
+        textAlign={layout.block.textAlign}
         editable={!loading}
         onSubmitEditing={() => void send(input)}
       />
@@ -133,12 +135,12 @@ export function GenieLampTutor({
 
       {reply ? (
         <View style={styles.replyBox}>
-          <Text style={styles.replyMeta}>
+          <Text style={[styles.replyMeta, layout.block]}>
             {source === 'llm' ? copy.geniePersona : copy.localTip}
           </Text>
-          <Text style={styles.reply}>{reply}</Text>
+          <Text style={[styles.reply, layout.block]}>{reply}</Text>
           {source === 'fallback' ? (
-            <Text style={styles.hint}>{copy.tutorUnavailable}</Text>
+            <Text style={[styles.hint, layout.block]}>{copy.tutorUnavailable}</Text>
           ) : null}
         </View>
       ) : null}

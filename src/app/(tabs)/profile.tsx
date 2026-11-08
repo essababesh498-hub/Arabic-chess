@@ -7,10 +7,12 @@ import { useProgress } from '@/context/ProgressContext';
 import type { AiStrength } from '@/lib/chess/ai';
 import { GLOSSARY_NOTE, PIECE_NAMES } from '@/lib/glossary';
 import type { AppLocale } from '@/lib/i18n';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function ProfileScreen() {
   const { copy, locale, setLocale } = useLocale();
+  const layout = useLocaleLayout();
   const {
     progress,
     setSoundEnabled,
@@ -39,31 +41,31 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.identity}>
+      <View style={[styles.identity, { flexDirection: layout.mirrorRow }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{copy.profileGuestName.slice(0, 1)}</Text>
         </View>
         <View style={styles.identityBody}>
-          <Text style={styles.name}>{copy.profileGuestName}</Text>
-          <Text style={styles.body}>{copy.profilePrototype}</Text>
+          <Text style={[styles.name, layout.block]}>{copy.profileGuestName}</Text>
+          <Text style={[styles.body, layout.block]}>{copy.profilePrototype}</Text>
         </View>
       </View>
 
-      <View style={styles.stats}>
+      <View style={[styles.stats, { flexDirection: layout.mirrorRow }]}>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{progress.completedChapterIds.length}</Text>
-          <Text style={styles.caption}>{copy.chaptersDone}</Text>
+          <Text style={[styles.caption, layout.center]}>{copy.chaptersDone}</Text>
         </View>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{progress.gamesPlayed}</Text>
-          <Text style={styles.caption}>{copy.gamesPlayed}</Text>
+          <Text style={[styles.caption, layout.center]}>{copy.gamesPlayed}</Text>
         </View>
       </View>
 
-      <Text style={styles.section}>{copy.settingsGuest}</Text>
-      <Text style={styles.body}>{copy.settingsGuestBody}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.settingsGuest}</Text>
+      <Text style={[styles.body, layout.block]}>{copy.settingsGuestBody}</Text>
 
-      <Text style={styles.section}>{copy.languageLabel}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.languageLabel}</Text>
       <SegmentedControl<AppLocale>
         value={locale}
         onChange={setLocale}
@@ -73,7 +75,7 @@ export default function ProfileScreen() {
         ]}
       />
 
-      <Text style={styles.section}>{copy.settingsSound}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.settingsSound}</Text>
       <SegmentedControl
         value={progress.soundEnabled ? 'on' : 'off'}
         onChange={(value) => void setSoundEnabled(value === 'on')}
@@ -83,7 +85,7 @@ export default function ProfileScreen() {
         ]}
       />
 
-      <Text style={styles.section}>{copy.settingsAiDefault}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.settingsAiDefault}</Text>
       <SegmentedControl<AiStrength>
         value={progress.defaultAiStrength}
         onChange={(value) => void setDefaultAiStrength(value)}
@@ -94,7 +96,7 @@ export default function ProfileScreen() {
         ]}
       />
 
-      <Text style={styles.section}>{copy.settingsTutor}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.settingsTutor}</Text>
       <SegmentedControl
         value={progress.tutorVerbose ? 'verbose' : 'brief'}
         onChange={(value) => void setTutorVerbose(value === 'verbose')}
@@ -104,8 +106,8 @@ export default function ProfileScreen() {
         ]}
       />
 
-      <Text style={styles.section}>{copy.settingsGlossary}</Text>
-      <Text style={styles.body}>{GLOSSARY_NOTE}</Text>
+      <Text style={[styles.section, layout.block]}>{copy.settingsGlossary}</Text>
+      <Text style={[styles.body, layout.arabic]}>{GLOSSARY_NOTE}</Text>
       {(
         [
           ['k', PIECE_NAMES.k],
@@ -116,7 +118,7 @@ export default function ProfileScreen() {
           ['p', PIECE_NAMES.p],
         ] as const
       ).map(([key, name]) => (
-        <Text key={key} style={styles.glossaryRow}>
+        <Text key={key} style={[styles.glossaryRow, layout.arabic]}>
           {name}
         </Text>
       ))}
@@ -127,7 +129,7 @@ export default function ProfileScreen() {
         onPress={confirmReset}
         style={{ marginTop: spacing.lg }}
       />
-      {cleared ? <Text style={styles.caption}>{copy.settingsResetDone}</Text> : null}
+      {cleared ? <Text style={[styles.caption, layout.center]}>{copy.settingsResetDone}</Text> : null}
     </ScrollView>
   );
 }

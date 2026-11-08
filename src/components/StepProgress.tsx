@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, spacing, typography } from '@/lib/theme';
 import type { ChapterStepKind } from '@/lib/curriculum/types';
 
@@ -18,6 +19,7 @@ type Props = {
 
 export function StepProgress({ current }: Props) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const labels: Record<ChapterStepKind, string> = {
     explanation: copy.stepExplanation,
     demo: copy.stepDemo,
@@ -27,7 +29,7 @@ export function StepProgress({ current }: Props) {
   };
   const currentIdx = ORDER.indexOf(current);
   return (
-    <View style={styles.row} accessibilityRole="summary">
+    <View style={[styles.row, { flexDirection: layout.mirrorRow }]} accessibilityRole="summary">
       {ORDER.map((kind, idx) => {
         const active = idx === currentIdx;
         const done = idx < currentIdx;
@@ -43,6 +45,7 @@ export function StepProgress({ current }: Props) {
             <Text
               style={[
                 styles.label,
+                layout.center,
                 (active || done) && styles.labelActive,
               ]}
               numberOfLines={1}

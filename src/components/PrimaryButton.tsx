@@ -6,6 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -25,6 +26,7 @@ export function PrimaryButton({
   disabled,
   style,
 }: Props) {
+  const layout = useLocaleLayout();
   return (
     <Pressable
       accessibilityRole="button"
@@ -44,6 +46,7 @@ export function PrimaryButton({
       <Text
         style={[
           styles.label,
+          layout.center,
           variant === 'primary' && styles.labelOnLight,
           variant === 'danger' && styles.labelOnLight,
         ]}

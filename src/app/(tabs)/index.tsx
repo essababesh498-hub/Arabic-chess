@@ -14,11 +14,13 @@ import { ActionCard } from '@/components/ui/ActionCard';
 import { useProgress } from '@/context/ProgressContext';
 import { useCopy } from '@/context/LocaleContext';
 import { brand } from '@/lib/brand';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function HomeScreen() {
   const { progress } = useProgress();
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const opacity = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(12)).current;
 
@@ -62,9 +64,9 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradientFallback style={styles.hero}>
-        <Text style={styles.eyebrow}>{brand.name}</Text>
-        <Text style={styles.tagline}>{copy.tagline}</Text>
-        <Text style={styles.welcome}>{copy.homeSubtitle}</Text>
+        <Text style={[styles.eyebrow, layout.block]}>{brand.name}</Text>
+        <Text style={[styles.tagline, layout.block]}>{copy.tagline}</Text>
+        <Text style={[styles.welcome, layout.block]}>{copy.homeSubtitle}</Text>
       </LinearGradientFallback>
 
       <Animated.View
@@ -88,19 +90,19 @@ export default function HomeScreen() {
         />
 
         <View style={styles.progress}>
-          <Text style={styles.sectionTitle}>{copy.progressTitle}</Text>
-          <View style={styles.statsRow}>
+          <Text style={[styles.sectionTitle, layout.block]}>{copy.progressTitle}</Text>
+          <View style={[styles.statsRow, { flexDirection: layout.mirrorRow }]}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{progress.completedChapterIds.length}</Text>
-              <Text style={styles.statLabel}>{copy.chaptersDone}</Text>
+              <Text style={[styles.statLabel, layout.center]}>{copy.chaptersDone}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statValue}>{progress.gamesPlayed}</Text>
-              <Text style={styles.statLabel}>{copy.gamesPlayed}</Text>
+              <Text style={[styles.statLabel, layout.center]}>{copy.gamesPlayed}</Text>
             </View>
           </View>
-          <Text style={styles.guestNote}>{copy.guestBadge}</Text>
+          <Text style={[styles.guestNote, layout.block]}>{copy.guestBadge}</Text>
         </View>
       </Animated.View>
     </ScrollView>

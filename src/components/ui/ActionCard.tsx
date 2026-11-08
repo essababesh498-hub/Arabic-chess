@@ -7,6 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 type Props = {
@@ -27,6 +28,7 @@ export function ActionCard({
   style,
 }: Props) {
   const disabled = !available || !onPress;
+  const layout = useLocaleLayout();
   return (
     <Pressable
       accessibilityRole="button"
@@ -40,13 +42,13 @@ export function ActionCard({
         style,
       ]}
     >
-      <View style={styles.head}>
-        <Text style={styles.title}>{title}</Text>
+      <View style={[styles.head, { flexDirection: layout.mirrorRow }]}>
+        <Text style={[styles.title, layout.block]}>{title}</Text>
         {badge ? (
-          <Text style={[styles.badge, !available && styles.badgeMuted]}>{badge}</Text>
+          <Text style={[styles.badge, layout.center, !available && styles.badgeMuted]}>{badge}</Text>
         ) : null}
       </View>
-      <Text style={styles.body}>{body}</Text>
+      <Text style={[styles.body, layout.block]}>{body}</Text>
     </Pressable>
   );
 }

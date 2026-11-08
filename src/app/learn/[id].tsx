@@ -8,7 +8,8 @@ import {
   Pressable,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Chess, type Square } from 'chess.js';
+import type { Square } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { BoardStage } from '@/components/board/BoardStage';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { StepProgress } from '@/components/StepProgress';
@@ -23,6 +24,7 @@ import type {
   QuizStep,
 } from '@/lib/curriculum/types';
 import { useCopy, useLocale } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { exercisePartialLabel } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
@@ -32,6 +34,7 @@ export default function ChapterPlayerScreen() {
   const chapter = getChapter(chapterId);
   const { progress, ready, completeChapter } = useProgress();
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const [stepIndex, setStepIndex] = useState(0);
   const [trackedChapterId, setTrackedChapterId] = useState(chapterId);
   const [demoSeen, setDemoSeen] = useState(false);
@@ -57,7 +60,7 @@ export default function ChapterPlayerScreen() {
   if (!chapter) {
     return (
       <View style={styles.center}>
-        <Text style={styles.body}>{copy.chapterMissing}</Text>
+        <Text style={[styles.body, layout.block]}>{copy.chapterMissing}</Text>
         <PrimaryButton label={copy.back} onPress={() => router.back()} />
       </View>
     );
@@ -76,7 +79,7 @@ export default function ChapterPlayerScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: chapter.title, headerTitle: chapter.title }} />
-        <Text style={styles.body}>{copy.chapterLockedHint}</Text>
+        <Text style={[styles.body, layout.block]}>{copy.chapterLockedHint}</Text>
         <PrimaryButton label={copy.back} onPress={() => router.back()} />
       </View>
     );
@@ -92,7 +95,7 @@ export default function ChapterPlayerScreen() {
         showsVerticalScrollIndicator={false}
       >
         <StepProgress current={step.kind} />
-        <Text style={styles.title}>{step.title}</Text>
+        <Text style={[styles.title, layout.arabic]}>{step.title}</Text>
 
         {step.kind === 'explanation' ? (
           <ExplanationView
@@ -164,9 +167,10 @@ function ExplanationView({
   onNext: () => void;
 }) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{body}</Text>
+      <Text style={[styles.body, layout.arabic]}>{body}</Text>
       <PrimaryButton label={copy.nextStep} onPress={onNext} />
     </View>
   );
@@ -186,6 +190,7 @@ function DemoView({
   onBack: () => void;
 }) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const [fen, setFen] = useState(step.fen);
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(
     null,
@@ -202,13 +207,13 @@ function DemoView({
     setPlaying(true);
     setFen(step.fen);
     setLastMove(null);
-    let game = new Chess(step.fen);
+    let game = loadPosition(step.fen);
     let finished = true;
     for (const m of step.moves) {
       await wait(650);
       try {
         if (m.fen) {
-          game = new Chess(m.fen);
+          game = loadPosition(m.fen);
           setFen(game.fen());
           setLastMove(null);
           await wait(700);
@@ -242,8 +247,8 @@ function DemoView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{copy.demoHint}</Text>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.demoHint}</Text>
       <BoardStage fen={fen} lastMove={lastMove} interactive={false} />
       <PrimaryButton
         label={
@@ -268,6 +273,7 @@ function InteractiveView({
   onBack: () => void;
 }) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const [fen, setFen] = useState(step.fen);
   const [selected, setSelected] = useState<Square | null>(null);
   const [targets, setTargets] = useState<Square[]>([]);
@@ -284,7 +290,7 @@ function InteractiveView({
 
   function onSquarePress(square: Square) {
     if (done) return;
-    const game = new Chess(fen);
+    const game = loadPosition(fen);
     if (!selected) {
       const piece = game.get(square);
       if (!piece || piece.color !== game.turn()) return;
@@ -331,8 +337,8 @@ function InteractiveView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{copy.interactiveHint}</Text>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.interactiveHint}</Text>
       <BoardStage
         fen={fen}
         selected={selected}
@@ -340,7 +346,15 @@ function InteractiveView({
         onSquarePress={onSquarePress}
       />
       {message ? (
-        <Text style={done ? styles.feedback : styles.feedbackBad}>{message}</Text>
+        <Text
+          style={
+            done
+              ? [styles.feedback, layout.arabic]
+              : [styles.feedbackBad, layout.block]
+          }
+        >
+          {message}
+        </Text>
       ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!done} />
     </View>
@@ -373,6 +387,7 @@ function ExercisesView({
   onBack: () => void;
 }) {
   const { copy, locale } = useLocale();
+  const layout = useLocaleLayout();
   const item: ExerciseItem = step.items[idx] ?? step.items[0]!;
   const foundSquares = found[item.id] ?? [];
   const allDone = step.items.every((i) => solved[i.id]);
@@ -402,9 +417,9 @@ function ExercisesView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{copy.exerciseHint}</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.exerciseHint}</Text>
+      <Text style={[styles.subtitle, layout.arabic]}>
         {item.prompt} ({idx + 1}/{step.items.length})
       </Text>
       <BoardStage
@@ -412,15 +427,17 @@ function ExercisesView({
         highlighted={foundSquares}
         onSquarePress={onSquarePress}
       />
-      {message ? <Text style={styles.feedbackBad}>{message}</Text> : null}
-      {solved[item.id] ? <Text style={styles.feedback}>صحيح!</Text> : null}
+      {message ? <Text style={[styles.feedbackBad, layout.block]}>{message}</Text> : null}
+      {solved[item.id] ? (
+        <Text style={[styles.feedback, layout.block]}>{layout.rtl ? 'صحيح!' : 'Correct'}</Text>
+      ) : null}
       {!solved[item.id] && item.correctSquares.length > 1 ? (
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, layout.block]}>
           {exercisePartialLabel(foundSquares.length, item.correctSquares.length, locale)}
         </Text>
       ) : null}
       {!solved[item.id] && item.hint ? (
-        <Text style={styles.hint}>{item.hint}</Text>
+        <Text style={[styles.hint, layout.arabic]}>{item.hint}</Text>
       ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!allDone} />
     </View>
@@ -449,6 +466,7 @@ function QuizView({
   onPass: () => Promise<void>;
 }) {
   const copy = useCopy();
+  const layout = useLocaleLayout();
   const score = useMemo(() => {
     return step.questions.reduce((acc, q) => {
       return acc + (answers[q.id] === q.correctIndex ? 1 : 0);
@@ -459,17 +477,17 @@ function QuizView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>
         {isLast ? copy.quizHintFinal : copy.quizHint}
       </Text>
-      <Text style={styles.caption}>
+      <Text style={[styles.caption, layout.block]}>
         {isLast ? copy.passQuizFinal : copy.passQuiz}
       </Text>
 
       {step.questions.map((q, qi) => (
         <View key={q.id} style={styles.quizBlock}>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, layout.arabic]}>
             {qi + 1}. {q.prompt}
           </Text>
           {q.options.map((opt, oi) => {
@@ -490,7 +508,7 @@ function QuizView({
                   showResult && selected && !correct && styles.optionWrong,
                 ]}
               >
-                <Text style={styles.optionText}>{opt}</Text>
+                <Text style={[styles.optionText, layout.arabic]}>{opt}</Text>
               </Pressable>
             );
           })}
@@ -499,22 +517,25 @@ function QuizView({
 
       {!submitted ? (
         <PrimaryButton
-          label="تسليم الإجابات"
+          label={layout.rtl ? 'تسليم الإجابات' : 'Submit answers'}
           onPress={() => setSubmitted(true)}
           disabled={Object.keys(answers).length < step.questions.length}
         />
       ) : (
         <View style={{ gap: 8 }}>
-          <Text style={styles.feedback}>
+          <Text style={[styles.feedback, layout.block]}>
             {passed
               ? `${copy.quizPass} (${score}/${step.questions.length})`
               : `${copy.quizFail} (${score}/${step.questions.length})`}
           </Text>
           {passed ? (
-            <PrimaryButton label="إكمال الفصل" onPress={() => void onPass()} />
+            <PrimaryButton
+              label={layout.rtl ? 'إكمال الفصل' : 'Finish chapter'}
+              onPress={() => void onPass()}
+            />
           ) : (
             <PrimaryButton
-              label="إعادة المحاولة"
+              label={copy.quizFail}
               variant="secondary"
               onPress={() => {
                 setAnswers({});

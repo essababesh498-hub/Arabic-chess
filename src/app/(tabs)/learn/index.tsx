@@ -4,11 +4,13 @@ import { router } from 'expo-router';
 import { CHAPTERS, isChapterUnlocked } from '@/lib/curriculum/chapters';
 import { useProgress } from '@/context/ProgressContext';
 import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function LearnListScreen() {
   const { progress, ready } = useProgress();
   const copy = useCopy();
+  const layout = useLocaleLayout();
 
   if (!ready) {
     return (
@@ -24,7 +26,7 @@ export default function LearnListScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.subtitle}>{copy.learnSubtitle}</Text>
+      <Text style={[styles.subtitle, layout.block]}>{copy.learnSubtitle}</Text>
 
       {CHAPTERS.map((chapter) => {
         const done = progress.completedChapterIds.includes(chapter.id);
@@ -34,17 +36,17 @@ export default function LearnListScreen() {
         );
         if (!unlocked) {
           return (
-            <View key={chapter.id} style={[styles.row, styles.locked]}>
+            <View key={chapter.id} style={[styles.row, { flexDirection: layout.mirrorRow }, styles.locked]}>
               <View style={[styles.numBadge, styles.numLocked]}>
                 <Text style={styles.numText}>{chapter.number}</Text>
               </View>
               <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>{chapter.title}</Text>
-                <Text style={styles.rowSummary}>{chapter.summary}</Text>
-                <Text style={[styles.rowStatus, styles.rowStatusLocked]}>
+                <Text style={[styles.rowTitle, layout.arabic]}>{chapter.title}</Text>
+                <Text style={[styles.rowSummary, layout.arabic]}>{chapter.summary}</Text>
+                <Text style={[styles.rowStatus, styles.rowStatusLocked, layout.block]}>
                   {copy.chapterLocked}
                 </Text>
-                <Text style={styles.rowSummary}>{copy.chapterLockedHint}</Text>
+                <Text style={[styles.rowSummary, layout.block]}>{copy.chapterLockedHint}</Text>
               </View>
             </View>
           );
@@ -53,16 +55,20 @@ export default function LearnListScreen() {
           <Pressable
             key={chapter.id}
             onPress={() => router.push(`/learn/${chapter.id}`)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.row,
+              { flexDirection: layout.mirrorRow },
+              pressed && styles.pressed,
+            ]}
             accessibilityRole="button"
           >
             <View style={styles.numBadge}>
               <Text style={styles.numText}>{chapter.number}</Text>
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>{chapter.title}</Text>
-              <Text style={styles.rowSummary}>{chapter.summary}</Text>
-              <Text style={styles.rowStatus}>
+              <Text style={[styles.rowTitle, layout.arabic]}>{chapter.title}</Text>
+              <Text style={[styles.rowSummary, layout.arabic]}>{chapter.summary}</Text>
+              <Text style={[styles.rowStatus, layout.block]}>
                 {done ? copy.chapterCompleted : copy.chapterAvailable}
               </Text>
             </View>
