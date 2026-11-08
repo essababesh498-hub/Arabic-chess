@@ -22,8 +22,17 @@ export type DemoStep = ChapterStepBase & {
   kind: 'demo';
   body: string;
   fen: string;
-  /** Sequence of moves (from-to) to animate once */
-  moves: Array<{ from: BoardSquare; to: BoardSquare; promotion?: string }>;
+  /**
+   * Moves to animate. A move with `fen` starts a new legal position
+   * instead of continuing the previous line. Every move must be legal
+   * in chess.js from the position it starts on.
+   */
+  moves: Array<{
+    from: BoardSquare;
+    to: BoardSquare;
+    promotion?: string;
+    fen?: string;
+  }>;
 };
 
 export type InteractiveStep = ChapterStepBase & {
@@ -62,6 +71,9 @@ export type QuizStep = ChapterStepBase & {
   body: string;
   questions: QuizQuestion[];
   passScore: number;
+  /** Legal position shown to the lamp on this quiz. */
+  tutorFen?: string;
+  tutorPrompts?: string[];
 };
 
 export type ChapterStep =

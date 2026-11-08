@@ -1,13 +1,24 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { CHAPTERS, PLACEHOLDER_CHAPTERS } from '@/lib/curriculum/chapters';
+import { CHAPTERS, isChapterUnlocked } from '@/lib/curriculum/chapters';
 import { useProgress } from '@/context/ProgressContext';
-import { strings } from '@/lib/strings';
-import { colors, radii, spacing, typography } from '@/lib/theme';
+import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
+import { colors, radii, shadows, spacing, typography } from '@/lib/theme';
 
 export default function LearnListScreen() {
-  const { progress } = useProgress();
+  const { progress, ready } = useProgress();
+  const copy = useCopy();
+  const layout = useLocaleLayout();
+
+  if (!ready) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.accent} size="large" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -15,49 +26,67 @@ export default function LearnListScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.subtitle}>{strings.learnSubtitle}</Text>
+      <Text style={[styles.subtitle, layout.block]}>{copy.learnSubtitle}</Text>
 
       {CHAPTERS.map((chapter) => {
         const done = progress.completedChapterIds.includes(chapter.id);
+        const unlocked = isChapterUnlocked(
+          chapter.id,
+          progress.completedChapterIds,
+        );
+        if (!unlocked) {
+          return (
+            <View key={chapter.id} style={[styles.row, { flexDirection: layout.mirrorRow }, styles.locked]}>
+              <View style={[styles.numBadge, styles.numLocked]}>
+                <Text style={styles.numText}>{chapter.number}</Text>
+              </View>
+              <View style={styles.rowBody}>
+                <Text style={[styles.rowTitle, layout.arabic]}>{chapter.title}</Text>
+                <Text style={[styles.rowSummary, layout.arabic]}>{chapter.summary}</Text>
+                <Text style={[styles.rowStatus, styles.rowStatusLocked, layout.block]}>
+                  {copy.chapterLocked}
+                </Text>
+                <Text style={[styles.rowSummary, layout.block]}>{copy.chapterLockedHint}</Text>
+              </View>
+            </View>
+          );
+        }
         return (
           <Pressable
             key={chapter.id}
             onPress={() => router.push(`/learn/${chapter.id}`)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.row,
+              { flexDirection: layout.mirrorRow },
+              pressed && styles.pressed,
+            ]}
             accessibilityRole="button"
           >
             <View style={styles.numBadge}>
               <Text style={styles.numText}>{chapter.number}</Text>
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowTitle}>{chapter.title}</Text>
-              <Text style={styles.rowSummary}>{chapter.summary}</Text>
-              <Text style={styles.rowStatus}>
-                {done ? strings.chapterCompleted : strings.chapterAvailable}
+              <Text style={[styles.rowTitle, layout.arabic]}>{chapter.title}</Text>
+              <Text style={[styles.rowSummary, layout.arabic]}>{chapter.summary}</Text>
+              <Text style={[styles.rowStatus, layout.block]}>
+                {done ? copy.chapterCompleted : copy.chapterAvailable}
               </Text>
             </View>
           </Pressable>
         );
       })}
-
-      {PLACEHOLDER_CHAPTERS.map((chapter) => (
-        <View key={chapter.id} style={[styles.row, styles.locked]}>
-          <View style={[styles.numBadge, styles.numLocked]}>
-            <Text style={styles.numText}>{chapter.number}</Text>
-          </View>
-          <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>{chapter.title}</Text>
-            <Text style={styles.rowSummary}>{chapter.summary}</Text>
-            <Text style={styles.rowStatus}>{strings.chapterLocked}</Text>
-          </View>
-        </View>
-      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  scroll: { flex: 1, backgroundColor: colors.background },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -73,9 +102,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row-reverse',
     gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
   },
   pressed: { opacity: 0.75 },
   locked: { opacity: 0.55 },
@@ -83,14 +115,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radii.sm,
-    backgroundColor: colors.boardFrame,
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   numLocked: { backgroundColor: colors.inkMuted },
   numText: {
     ...typography.subtitle,
-    color: colors.cream,
+    color: colors.onAccent,
   },
   rowBody: { flex: 1, gap: 4 },
   rowTitle: {
@@ -111,5 +143,8 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     fontFamily: 'IBMPlexSansArabic_600SemiBold',
+  },
+  rowStatusLocked: {
+    color: colors.inkMuted,
   },
 });

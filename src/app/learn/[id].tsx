@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,13 +8,14 @@ import {
   Pressable,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Chess, type Square } from 'chess.js';
+import type { Square } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { BoardStage } from '@/components/board/BoardStage';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { StepProgress } from '@/components/StepProgress';
 import { GenieLampTutor } from '@/components/tutor/GenieLampTutor';
 import { useProgress } from '@/context/ProgressContext';
-import { getChapter } from '@/lib/curriculum/chapters';
+import { getChapter, isChapterUnlocked, isLastChapter } from '@/lib/curriculum/chapters';
 import type {
   DemoStep,
   ExerciseItem,
@@ -21,20 +23,64 @@ import type {
   InteractiveStep,
   QuizStep,
 } from '@/lib/curriculum/types';
-import { strings } from '@/lib/strings';
+import { useCopy, useLocale } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
+import { exercisePartialLabel } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 export default function ChapterPlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const chapter = getChapter(id ?? '');
-  const { completeChapter } = useProgress();
+  const chapterId = typeof id === 'string' ? id : '';
+  const chapter = getChapter(chapterId);
+  const { progress, ready, completeChapter } = useProgress();
+  const copy = useCopy();
+  const layout = useLocaleLayout();
   const [stepIndex, setStepIndex] = useState(0);
+  const [trackedChapterId, setTrackedChapterId] = useState(chapterId);
+  const [demoSeen, setDemoSeen] = useState(false);
+  const [exerciseIdx, setExerciseIdx] = useState(0);
+  const [solved, setSolved] = useState<Record<string, boolean>>({});
+  const [found, setFound] = useState<Record<string, Square[]>>({});
+  const [exerciseMessage, setExerciseMessage] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  if (trackedChapterId !== chapterId) {
+    setTrackedChapterId(chapterId);
+    setStepIndex(0);
+    setDemoSeen(false);
+    setExerciseIdx(0);
+    setSolved({});
+    setFound({});
+    setExerciseMessage(null);
+    setAnswers({});
+    setQuizSubmitted(false);
+  }
 
   if (!chapter) {
     return (
       <View style={styles.center}>
-        <Text style={styles.body}>الفصل غير موجود.</Text>
-        <PrimaryButton label="رجوع" onPress={() => router.back()} />
+        <Text style={[styles.body, layout.block]}>{copy.chapterMissing}</Text>
+        <PrimaryButton label={copy.back} onPress={() => router.back()} />
+      </View>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.accent} size="large" />
+      </View>
+    );
+  }
+
+  const unlocked = isChapterUnlocked(chapter.id, progress.completedChapterIds);
+  if (!unlocked) {
+    return (
+      <View style={styles.center}>
+        <Stack.Screen options={{ title: chapter.title, headerTitle: chapter.title }} />
+        <Text style={[styles.body, layout.block]}>{copy.chapterLockedHint}</Text>
+        <PrimaryButton label={copy.back} onPress={() => router.back()} />
       </View>
     );
   }
@@ -43,13 +89,13 @@ export default function ChapterPlayerScreen() {
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ title: chapter.title }} />
+      <Stack.Screen options={{ title: chapter.title, headerTitle: chapter.title }} />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         <StepProgress current={step.kind} />
-        <Text style={styles.title}>{step.title}</Text>
+        <Text style={[styles.title, layout.arabic]}>{step.title}</Text>
 
         {step.kind === 'explanation' ? (
           <ExplanationView
@@ -59,7 +105,13 @@ export default function ChapterPlayerScreen() {
         ) : null}
 
         {step.kind === 'demo' ? (
-          <DemoView step={step} onNext={() => setStepIndex(2)} onBack={() => setStepIndex(0)} />
+          <DemoView
+            step={step}
+            seen={demoSeen}
+            onSeen={() => setDemoSeen(true)}
+            onNext={() => setStepIndex(2)}
+            onBack={() => setStepIndex(0)}
+          />
         ) : null}
 
         {step.kind === 'interactive' ? (
@@ -73,6 +125,14 @@ export default function ChapterPlayerScreen() {
         {step.kind === 'exercises' ? (
           <ExercisesView
             step={step}
+            idx={exerciseIdx}
+            setIdx={setExerciseIdx}
+            solved={solved}
+            setSolved={setSolved}
+            found={found}
+            setFound={setFound}
+            message={exerciseMessage}
+            setMessage={setExerciseMessage}
             onNext={() => setStepIndex(4)}
             onBack={() => setStepIndex(2)}
           />
@@ -81,7 +141,12 @@ export default function ChapterPlayerScreen() {
         {step.kind === 'quiz' ? (
           <QuizView
             step={step}
+            isLast={isLastChapter(chapter.id)}
             chapterContext={chapter.title}
+            answers={answers}
+            setAnswers={setAnswers}
+            submitted={quizSubmitted}
+            setSubmitted={setQuizSubmitted}
             onBack={() => setStepIndex(3)}
             onPass={async () => {
               await completeChapter(chapter.id);
@@ -101,23 +166,31 @@ function ExplanationView({
   body: string;
   onNext: () => void;
 }) {
+  const copy = useCopy();
+  const layout = useLocaleLayout();
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{body}</Text>
-      <PrimaryButton label={strings.nextStep} onPress={onNext} />
+      <Text style={[styles.body, layout.arabic]}>{body}</Text>
+      <PrimaryButton label={copy.nextStep} onPress={onNext} />
     </View>
   );
 }
 
 function DemoView({
   step,
+  seen,
+  onSeen,
   onNext,
   onBack,
 }: {
   step: DemoStep;
+  seen: boolean;
+  onSeen: () => void;
   onNext: () => void;
   onBack: () => void;
 }) {
+  const copy = useCopy();
+  const layout = useLocaleLayout();
   const [fen, setFen] = useState(step.fen);
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(
     null,
@@ -134,31 +207,53 @@ function DemoView({
     setPlaying(true);
     setFen(step.fen);
     setLastMove(null);
-    const game = new Chess(step.fen);
+    let game = loadPosition(step.fen);
+    let finished = true;
     for (const m of step.moves) {
       await wait(650);
       try {
-        game.move({
+        if (m.fen) {
+          game = loadPosition(m.fen);
+          setFen(game.fen());
+          setLastMove(null);
+          await wait(700);
+        }
+        const promotion =
+          m.promotion === 'q' ||
+          m.promotion === 'r' ||
+          m.promotion === 'b' ||
+          m.promotion === 'n'
+            ? m.promotion
+            : undefined;
+        const played = game.move({
           from: m.from as Square,
           to: m.to as Square,
-          promotion: (m.promotion as 'q') || undefined,
+          promotion,
         });
+        if (!played) {
+          finished = false;
+          break;
+        }
         setFen(game.fen());
-        setLastMove({ from: m.from as Square, to: m.to as Square });
+        setLastMove({ from: played.from, to: played.to });
       } catch {
+        finished = false;
         break;
       }
     }
     setPlaying(false);
+    if (finished) onSeen();
   }
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{strings.demoHint}</Text>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.demoHint}</Text>
       <BoardStage fen={fen} lastMove={lastMove} interactive={false} />
       <PrimaryButton
-        label={playing ? 'جارٍ العرض…' : 'أعد العرض'}
+        label={
+          playing ? copy.demoPlaying : seen ? copy.demoReplay : copy.demoWatch
+        }
         variant="secondary"
         onPress={() => void playDemo()}
         disabled={playing}
@@ -177,6 +272,8 @@ function InteractiveView({
   onNext: () => void;
   onBack: () => void;
 }) {
+  const copy = useCopy();
+  const layout = useLocaleLayout();
   const [fen, setFen] = useState(step.fen);
   const [selected, setSelected] = useState<Square | null>(null);
   const [targets, setTargets] = useState<Square[]>([]);
@@ -193,7 +290,7 @@ function InteractiveView({
 
   function onSquarePress(square: Square) {
     if (done) return;
-    const game = new Chess(fen);
+    const game = loadPosition(fen);
     if (!selected) {
       const piece = game.get(square);
       if (!piece || piece.color !== game.turn()) return;
@@ -226,7 +323,7 @@ function InteractiveView({
         setDone(true);
         setMessage(step.successMessage);
       } else {
-        setMessage('حاول مجدداً — هذه ليست النقلة المطلوبة.');
+        setMessage(copy.interactiveRetry);
         setTimeout(() => {
           setFen(step.fen);
           setMessage(null);
@@ -240,15 +337,25 @@ function InteractiveView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{strings.interactiveHint}</Text>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.interactiveHint}</Text>
       <BoardStage
         fen={fen}
         selected={selected}
         legalTargets={targets}
         onSquarePress={onSquarePress}
       />
-      {message ? <Text style={styles.feedback}>{message}</Text> : null}
+      {message ? (
+        <Text
+          style={
+            done
+              ? [styles.feedback, layout.arabic]
+              : [styles.feedbackBad, layout.block]
+          }
+        >
+          {message}
+        </Text>
+      ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!done} />
     </View>
   );
@@ -256,44 +363,81 @@ function InteractiveView({
 
 function ExercisesView({
   step,
+  idx,
+  setIdx,
+  solved,
+  setSolved,
+  found,
+  setFound,
+  message,
+  setMessage,
   onNext,
   onBack,
 }: {
   step: ExercisesStep;
+  idx: number;
+  setIdx: React.Dispatch<React.SetStateAction<number>>;
+  solved: Record<string, boolean>;
+  setSolved: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  found: Record<string, Square[]>;
+  setFound: React.Dispatch<React.SetStateAction<Record<string, Square[]>>>;
+  message: string | null;
+  setMessage: React.Dispatch<React.SetStateAction<string | null>>;
   onNext: () => void;
   onBack: () => void;
 }) {
-  const [idx, setIdx] = useState(0);
-  const [solved, setSolved] = useState<Record<string, boolean>>({});
-  const item: ExerciseItem = step.items[idx]!;
+  const { copy, locale } = useLocale();
+  const layout = useLocaleLayout();
+  const item: ExerciseItem = step.items[idx] ?? step.items[0]!;
+  const foundSquares = found[item.id] ?? [];
   const allDone = step.items.every((i) => solved[i.id]);
 
   function onSquarePress(square: Square) {
     if (solved[item.id]) return;
-    if (item.correctSquares.includes(square)) {
-      setSolved((s) => ({ ...s, [item.id]: true }));
-      if (idx < step.items.length - 1) {
-        setTimeout(() => setIdx((n) => n + 1), 500);
-      }
+    if (!item.correctSquares.includes(square)) {
+      setMessage(copy.exerciseRetry);
+      return;
+    }
+    if (foundSquares.includes(square)) return;
+    const next = [...foundSquares, square];
+    setFound((current) => ({ ...current, [item.id]: next }));
+    setMessage(null);
+    const complete = item.correctSquares.every((target) =>
+      next.includes(target as Square),
+    );
+    if (!complete) return;
+    setSolved((current) => ({ ...current, [item.id]: true }));
+    if (idx < step.items.length - 1) {
+      setTimeout(() => {
+        setIdx((n) => n + 1);
+        setMessage(null);
+      }, 500);
     }
   }
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{strings.exerciseHint}</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>{copy.exerciseHint}</Text>
+      <Text style={[styles.subtitle, layout.arabic]}>
         {item.prompt} ({idx + 1}/{step.items.length})
       </Text>
       <BoardStage
         fen={item.fen}
-        highlighted={solved[item.id] ? (item.correctSquares as Square[]) : []}
+        highlighted={foundSquares}
         onSquarePress={onSquarePress}
       />
+      {message ? <Text style={[styles.feedbackBad, layout.block]}>{message}</Text> : null}
       {solved[item.id] ? (
-        <Text style={styles.feedback}>صحيح!</Text>
-      ) : item.hint ? (
-        <Text style={styles.hint}>{item.hint}</Text>
+        <Text style={[styles.feedback, layout.block]}>{layout.rtl ? 'صحيح!' : 'Correct'}</Text>
+      ) : null}
+      {!solved[item.id] && item.correctSquares.length > 1 ? (
+        <Text style={[styles.hint, layout.block]}>
+          {exercisePartialLabel(foundSquares.length, item.correctSquares.length, locale)}
+        </Text>
+      ) : null}
+      {!solved[item.id] && item.hint ? (
+        <Text style={[styles.hint, layout.arabic]}>{item.hint}</Text>
       ) : null}
       <NavRow onBack={onBack} onNext={onNext} nextDisabled={!allDone} />
     </View>
@@ -302,18 +446,27 @@ function ExercisesView({
 
 function QuizView({
   step,
+  isLast,
   chapterContext,
+  answers,
+  setAnswers,
+  submitted,
+  setSubmitted,
   onBack,
   onPass,
 }: {
   step: QuizStep;
+  isLast: boolean;
   chapterContext: string;
+  answers: Record<string, number>;
+  setAnswers: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  submitted: boolean;
+  setSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
   onBack: () => void;
   onPass: () => Promise<void>;
 }) {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-
+  const copy = useCopy();
+  const layout = useLocaleLayout();
   const score = useMemo(() => {
     return step.questions.reduce((acc, q) => {
       return acc + (answers[q.id] === q.correctIndex ? 1 : 0);
@@ -324,13 +477,17 @@ function QuizView({
 
   return (
     <View style={styles.block}>
-      <Text style={styles.body}>{step.body}</Text>
-      <Text style={styles.hint}>{strings.quizHint}</Text>
-      <Text style={styles.caption}>{strings.passQuiz}</Text>
+      <Text style={[styles.body, layout.arabic]}>{step.body}</Text>
+      <Text style={[styles.hint, layout.block]}>
+        {isLast ? copy.quizHintFinal : copy.quizHint}
+      </Text>
+      <Text style={[styles.caption, layout.block]}>
+        {isLast ? copy.passQuizFinal : copy.passQuiz}
+      </Text>
 
       {step.questions.map((q, qi) => (
         <View key={q.id} style={styles.quizBlock}>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, layout.arabic]}>
             {qi + 1}. {q.prompt}
           </Text>
           {q.options.map((opt, oi) => {
@@ -351,7 +508,7 @@ function QuizView({
                   showResult && selected && !correct && styles.optionWrong,
                 ]}
               >
-                <Text style={styles.optionText}>{opt}</Text>
+                <Text style={[styles.optionText, layout.arabic]}>{opt}</Text>
               </Pressable>
             );
           })}
@@ -360,22 +517,25 @@ function QuizView({
 
       {!submitted ? (
         <PrimaryButton
-          label="تسليم الإجابات"
+          label={layout.rtl ? 'تسليم الإجابات' : 'Submit answers'}
           onPress={() => setSubmitted(true)}
           disabled={Object.keys(answers).length < step.questions.length}
         />
       ) : (
         <View style={{ gap: 8 }}>
-          <Text style={styles.feedback}>
+          <Text style={[styles.feedback, layout.block]}>
             {passed
-              ? `${strings.quizPass} (${score}/${step.questions.length})`
-              : `${strings.quizFail} (${score}/${step.questions.length})`}
+              ? `${copy.quizPass} (${score}/${step.questions.length})`
+              : `${copy.quizFail} (${score}/${step.questions.length})`}
           </Text>
           {passed ? (
-            <PrimaryButton label="إكمال الفصل" onPress={() => void onPass()} />
+            <PrimaryButton
+              label={layout.rtl ? 'إكمال الفصل' : 'Finish chapter'}
+              onPress={() => void onPass()}
+            />
           ) : (
             <PrimaryButton
-              label="إعادة المحاولة"
+              label={copy.quizFail}
               variant="secondary"
               onPress={() => {
                 setAnswers({});
@@ -386,12 +546,14 @@ function QuizView({
         </View>
       )}
 
-      <PrimaryButton label={strings.prevStep} variant="ghost" onPress={onBack} />
+      <PrimaryButton label={copy.prevStep} variant="ghost" onPress={onBack} />
 
       <GenieLampTutor
-        fen="8/8/8/8/8/8/8/R7 w - - 0 1"
+        fen={step.tutorFen ?? 'k7/8/8/8/8/8/8/4R2K w - - 0 1'}
         chapterContext={chapterContext}
-        cannedPrompts={['اشرح حركة الرخ', 'ما الفرق بين الرخ والقلعة؟']}
+        cannedPrompts={
+          step.tutorPrompts ?? ['اشرح حركة الرخ', 'ما الفرق بين الرخ والقلعة؟']
+        }
       />
     </View>
   );
@@ -406,16 +568,17 @@ function NavRow({
   onNext: () => void;
   nextDisabled?: boolean;
 }) {
+  const copy = useCopy();
   return (
     <View style={styles.navRow}>
       <PrimaryButton
-        label={strings.nextStep}
+        label={copy.nextStep}
         onPress={onNext}
         disabled={nextDisabled}
         style={{ flex: 1 }}
       />
       <PrimaryButton
-        label={strings.prevStep}
+        label={copy.prevStep}
         variant="ghost"
         onPress={onBack}
         style={{ flex: 1 }}
@@ -429,7 +592,7 @@ function wait(ms: number) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.cream },
+  root: { flex: 1, backgroundColor: colors.background },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -479,6 +642,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
   },
+  feedbackBad: {
+    ...typography.body,
+    color: colors.danger,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
   navRow: {
     flexDirection: 'row-reverse',
     gap: spacing.sm,
@@ -492,16 +661,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   optionSelected: {
-    borderColor: colors.boardFrame,
-    backgroundColor: colors.sandSoft,
+    borderColor: colors.accent,
+    backgroundColor: colors.surfaceMuted,
   },
   optionCorrect: {
     borderColor: colors.success,
-    backgroundColor: 'rgba(42, 107, 79, 0.12)',
+    backgroundColor: 'rgba(125, 206, 160, 0.16)',
   },
   optionWrong: {
     borderColor: colors.danger,
-    backgroundColor: 'rgba(166, 61, 61, 0.1)',
+    backgroundColor: 'rgba(224, 122, 114, 0.16)',
   },
   optionText: {
     ...typography.body,

@@ -1,19 +1,40 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Chess, type Square } from 'chess.js';
 import { BoardStage } from '@/components/board/BoardStage';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { overheadFrame } from '@/components/board/boardSize';
+import { GameMenu } from '@/components/gold/GameMenu';
+import { GoldButton } from '@/components/gold/GoldButton';
+import { PlayerBar } from '@/components/gold/PlayerBar';
+import { VsBadge } from '@/components/gold/VsBadge';
 import { GenieLampTutor } from '@/components/tutor/GenieLampTutor';
+import { useLocale } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { useProgress } from '@/context/ProgressContext';
 import { applyMove, chooseAiMove, type AiStrength } from '@/lib/chess/ai';
 import { TERMS } from '@/lib/glossary';
-import { strings } from '@/lib/strings';
-import { colors, spacing, typography } from '@/lib/theme';
+import { catalogs } from '@/lib/i18n';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const CLOCK_START = 10 * 60;
+const CLOCK_INCREMENT = 30;
+const INCREMENT_LABEL = '+0:30';
+
+function isDecidedResult(status: string | null): boolean {
+  if (!status) return false;
+  return (
+    status === catalogs.ar.youWin ||
+    status === catalogs.ar.youLose ||
+    status === catalogs.en.youWin ||
+    status === catalogs.en.youLose
+  );
+}
 
 export default function GameScreen() {
+  const { copy, locale } = useLocale();
+  const layout = useLocaleLayout();
   const params = useLocalSearchParams<{
     color?: string;
     strength?: string;
@@ -29,7 +50,16 @@ export default function GameScreen() {
     null,
   );
   const [status, setStatus] = useState<string | null>(null);
+  const [whiteTime, setWhiteTime] = useState(CLOCK_START);
+  const [blackTime, setBlackTime] = useState(CLOCK_START);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [boardSlot, setBoardSlot] = useState<{ width: number; height: number } | null>(null);
+  const [, setNotice] = useState<string | null>(null);
   const recordedRef = useRef(false);
+  const skipClock = useRef(true);
+
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const game = useMemo(() => new Chess(fen), [fen]);
   const turn = game.turn();
@@ -45,14 +75,14 @@ export default function GameScreen() {
         const playerWon =
           (g.turn() === 'b' && playerIsWhite) ||
           (g.turn() === 'w' && !playerIsWhite);
-        setStatus(playerWon ? strings.youWin : strings.youLose);
+        setStatus(playerWon ? copy.youWin : copy.youLose);
         if (!recordedRef.current) {
           recordedRef.current = true;
           await recordGame();
         }
       } else if (g.isDraw() || g.isStalemate()) {
         setStatus(
-          g.isStalemate() ? `${strings.draw} (${TERMS.stalemate})` : strings.draw,
+          g.isStalemate() ? `${copy.draw} (${TERMS.stalemate})` : copy.draw,
         );
         if (!recordedRef.current) {
           recordedRef.current = true;
@@ -64,12 +94,12 @@ export default function GameScreen() {
         setStatus(null);
       }
     },
-    [playerIsWhite, recordGame],
+    [copy, playerIsWhite, recordGame],
   );
 
   // AI move when it's the computer's turn
   useEffect(() => {
-    if (status === strings.youWin || status === strings.youLose) return;
+    if (isDecidedResult(status)) return;
     if (isPlayerTurn) return;
     if (game.isGameOver()) return;
 
@@ -141,103 +171,200 @@ export default function GameScreen() {
 
   function resetGame() {
     recordedRef.current = false;
-    setFen(START_FEN);
+    setWhiteTime(CLOCK_START);
+    setBlackTime(CLOCK_START);
+    setFen((current) => {
+      if (current !== START_FEN) skipClock.current = true;
+      return START_FEN;
+    });
     setSelected(null);
     setTargets([]);
     setLastMove(null);
     setStatus(null);
+    setNotice(null);
   }
 
-  const turnLabel = isPlayerTurn ? TERMS.yourTurn : TERMS.aiTurn;
+  const lastClockFen = useRef(fen);
+  useEffect(() => {
+    if (lastClockFen.current === fen) return;
+    lastClockFen.current = fen;
+    if (skipClock.current) {
+      skipClock.current = false;
+      return;
+    }
+    const mover = game.turn() === 'w' ? 'b' : 'w';
+    if (mover === 'w') setWhiteTime((time) => time + CLOCK_INCREMENT);
+    else setBlackTime((time) => time + CLOCK_INCREMENT);
+  }, [fen, game]);
+
+  useEffect(() => {
+    if (game.isGameOver() || isDecidedResult(status)) {
+      return;
+    }
+    const timer = setInterval(() => {
+      if (game.turn() === 'w') setWhiteTime((time) => Math.max(0, time - 1));
+      else setBlackTime((time) => Math.max(0, time - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [fen, game, status]);
+
+  const showVs = height >= 720;
+  const compact = height < 700;
+  const aiRating = strength === 'easy' ? 800 : strength === 'medium' ? 1400 : 2000;
+  const strengthLabel =
+    strength === 'easy'
+      ? copy.strengthEasy
+      : strength === 'medium'
+        ? copy.strengthMedium
+        : copy.strengthHard;
+  const opponentName =
+    locale === 'en' ? `Computer · ${strengthLabel}` : `الكمبيوتر · ${strengthLabel}`;
+  const playerName = locale === 'en' ? 'You' : 'أنت';
+  const opponentTime = playerIsWhite ? blackTime : whiteTime;
+  const playerTime = playerIsWhite ? whiteTime : blackTime;
+  const frame = boardSlot ? overheadFrame(boardSlot.width, boardSlot.height) : undefined;
+  const helpContext = locale === 'en' ? 'Game against the computer' : 'مباراة ضد الكمبيوتر';
+  const closeLabel = locale === 'en' ? 'Close' : 'إغلاق';
+  const soonLabel = locale === 'en' ? 'Leaderboard coming soon' : 'المتصدرين قريباً';
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Stack.Screen
-        options={{
-          title: `ضد الكمبيوتر · ${
-            strength === 'easy'
-              ? TERMS.easy
-              : strength === 'medium'
-                ? TERMS.medium
-                : TERMS.hard
-          }`,
-        }}
-      />
+    <View style={styles.screen}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.meta}>
-        <Text style={styles.metaText}>{turnLabel}</Text>
-        {status ? <Text style={styles.status}>{status}</Text> : null}
+      <View
+        style={styles.boardLayer}
+        onLayout={(event) => {
+          const { width: slotWidth, height: slotHeight } = event.nativeEvent.layout;
+          const next = {
+            width: Math.floor(slotWidth),
+            height: Math.floor(slotHeight),
+          };
+          setBoardSlot((current) =>
+            current && current.width === next.width && current.height === next.height
+              ? current
+              : next,
+          );
+        }}
+      >
+        <BoardStage
+          fen={fen}
+          orientation={orientation}
+          selected={selected}
+          legalTargets={targets}
+          lastMove={lastMove}
+          onSquarePress={onSquarePress}
+          interactive={!game.isGameOver()}
+          hideScaffoldBadge
+          maxSize={frame ? Math.min(frame.width, frame.height) : undefined}
+          viewport={frame}
+        />
       </View>
 
-      <BoardStage
-        fen={fen}
-        orientation={orientation}
-        selected={selected}
-        legalTargets={targets}
-        lastMove={lastMove}
-        onSquarePress={onSquarePress}
-        interactive={!game.isGameOver()}
-      />
-
-      <View style={styles.actions}>
-        <PrimaryButton
-          label={strings.newGame}
-          variant="secondary"
-          onPress={resetGame}
-          style={{ flex: 1 }}
-        />
-        <PrimaryButton
-          label={strings.resign}
-          variant="ghost"
-          onPress={() => {
-            setStatus(strings.youLose);
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.chrome,
+          {
+            paddingTop: Math.max(insets.top, 6),
+            paddingBottom: Math.max(insets.bottom, 6),
+          },
+        ]}
+      >
+      <View style={[styles.menuRow, { justifyContent: layout.pinLeft }]} pointerEvents="box-none">
+        <GameMenu
+          topInset={Math.max(insets.top, 6)}
+          onNewGame={resetGame}
+          onResign={() => {
+            setStatus(copy.youLose);
             if (!recordedRef.current) {
               recordedRef.current = true;
               void recordGame();
             }
           }}
-          style={{ flex: 1 }}
+          onSettings={() => router.push('/profile')}
+          onLeaderboard={() => setNotice(soonLabel)}
+          onHelp={() => setHelpOpen(true)}
+          onExit={() => router.replace('/')}
         />
       </View>
 
-      <PrimaryButton
-        label="إعدادات المباراة"
-        variant="ghost"
-        onPress={() => router.replace('/play')}
+      <PlayerBar
+        split
+        compact={compact}
+        name={opponentName}
+        rating={aiRating}
+        seconds={opponentTime}
+        incrementLabel={INCREMENT_LABEL}
+        active={!isPlayerTurn && !game.isGameOver()}
+        avatarLabel={locale === 'en' ? 'C' : 'ك'}
       />
 
-      <GenieLampTutor fen={fen} chapterContext="مباراة ضد الكمبيوتر" />
-    </ScrollView>
+      {showVs ? <VsBadge /> : null}
+
+      <View style={styles.boardGap} pointerEvents="none" />
+
+      <PlayerBar
+        split
+        compact={compact}
+        name={playerName}
+        rating={1200}
+        seconds={playerTime}
+        incrementLabel={INCREMENT_LABEL}
+        active={isPlayerTurn && !game.isGameOver()}
+        avatarLabel={locale === 'en' ? 'Y' : 'أ'}
+      />
+      </View>
+
+      <Modal
+        visible={helpOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setHelpOpen(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setHelpOpen(false)}>
+          <View style={styles.modalCard}>
+            <GenieLampTutor fen={fen} chapterContext={helpContext} />
+            <GoldButton label={closeLabel} onPress={() => setHelpOpen(false)} />
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.cream },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.md,
-    paddingBottom: spacing.xxl,
+  screen: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
-  meta: {
-    alignItems: 'flex-end',
+  boardLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  chrome: {
+    flex: 1,
+    paddingHorizontal: 8,
     gap: 4,
+    zIndex: 2,
   },
-  metaText: {
-    ...typography.subtitle,
-    color: colors.ink,
-    writingDirection: 'rtl',
+  menuRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    zIndex: 20,
   },
-  status: {
-    ...typography.body,
-    color: colors.danger,
-    writingDirection: 'rtl',
+  boardGap: {
+    flex: 1,
   },
-  actions: {
-    flexDirection: 'row-reverse',
-    gap: spacing.sm,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  modalCard: {
+    gap: 8,
   },
 });

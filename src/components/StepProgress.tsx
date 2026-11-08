@@ -1,16 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { strings } from '@/lib/strings';
+import { useCopy } from '@/context/LocaleContext';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, spacing, typography } from '@/lib/theme';
 import type { ChapterStepKind } from '@/lib/curriculum/types';
-
-const LABELS: Record<ChapterStepKind, string> = {
-  explanation: strings.stepExplanation,
-  demo: strings.stepDemo,
-  interactive: strings.stepInteractive,
-  exercises: strings.stepExercises,
-  quiz: strings.stepQuiz,
-};
 
 const ORDER: ChapterStepKind[] = [
   'explanation',
@@ -25,9 +18,18 @@ type Props = {
 };
 
 export function StepProgress({ current }: Props) {
+  const copy = useCopy();
+  const layout = useLocaleLayout();
+  const labels: Record<ChapterStepKind, string> = {
+    explanation: copy.stepExplanation,
+    demo: copy.stepDemo,
+    interactive: copy.stepInteractive,
+    exercises: copy.stepExercises,
+    quiz: copy.stepQuiz,
+  };
   const currentIdx = ORDER.indexOf(current);
   return (
-    <View style={styles.row} accessibilityRole="summary">
+    <View style={[styles.row, { flexDirection: layout.mirrorRow }]} accessibilityRole="summary">
       {ORDER.map((kind, idx) => {
         const active = idx === currentIdx;
         const done = idx < currentIdx;
@@ -43,11 +45,12 @@ export function StepProgress({ current }: Props) {
             <Text
               style={[
                 styles.label,
+                layout.center,
                 (active || done) && styles.labelActive,
               ]}
               numberOfLines={1}
             >
-              {LABELS[kind]}
+              {labels[kind]}
             </Text>
           </View>
         );

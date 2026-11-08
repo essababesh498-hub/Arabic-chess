@@ -1,5 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
+import { brand } from '../lib/brand';
 
 /** Web document shell — RTL so the desktop simulator matches Arabic layout. */
 export default function Root({ children }: PropsWithChildren) {
@@ -12,7 +13,7 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
-        <title>Arabic Chess</title>
+        <title>{brand.name}</title>
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
       </head>
@@ -25,7 +26,7 @@ const ROOT_CSS = `
 html, body, #root {
   height: 100%;
   margin: 0;
-  background: #1A1714;
+  background: #090A0D;
 }
 body {
   overflow: hidden;

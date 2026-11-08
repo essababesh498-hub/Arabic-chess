@@ -9,6 +9,7 @@ import {
   IBMPlexSansArabic_700Bold,
 } from '@expo-google-fonts/ibm-plex-sans-arabic';
 import { WebDesktopShell } from '@/components/WebDesktopShell';
+import { LocaleProvider } from '@/context/LocaleContext';
 import { ProgressProvider } from '@/context/ProgressContext';
 import { colors } from '@/lib/theme';
 
@@ -33,59 +34,63 @@ export default function RootLayout() {
   if (!fontsLoaded) {
     return (
       <View style={styles.boot}>
-        <ActivityIndicator color={colors.cream} size="large" />
+        <ActivityIndicator color={colors.ivory} size="large" />
       </View>
     );
   }
 
   return (
-    <ProgressProvider>
-      <StatusBar style="light" />
-      <WebDesktopShell>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.cream, flex: 1 },
-            animation: 'fade',
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="learn/[id]"
-            options={{
-              headerShown: true,
-              headerTitle: 'فصل',
-              headerBackTitle: 'رجوع',
-              headerStyle: { backgroundColor: colors.boardFrame },
-              headerTintColor: colors.cream,
-              headerTitleStyle: {
-                fontFamily: 'IBMPlexSansArabic_600SemiBold',
-              },
+    <LocaleProvider>
+      <ProgressProvider>
+        <StatusBar style="light" />
+        <WebDesktopShell>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background, flex: 1 },
+              animation: 'fade',
             }}
-          />
-          <Stack.Screen
-            name="play/game"
-            options={{
-              headerShown: true,
-              headerTitle: 'مباراة',
-              headerBackTitle: 'رجوع',
-              headerStyle: { backgroundColor: colors.boardFrame },
-              headerTintColor: colors.cream,
-              headerTitleStyle: {
-                fontFamily: 'IBMPlexSansArabic_600SemiBold',
-              },
-            }}
-          />
-        </Stack>
-      </WebDesktopShell>
-    </ProgressProvider>
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="learn/[id]"
+              options={{
+                headerShown: true,
+                headerTitle: 'فصل',
+                headerBackTitle: 'رجوع',
+                headerStyle: { backgroundColor: colors.backgroundRaised },
+                headerTintColor: colors.ivory,
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontFamily: 'IBMPlexSansArabic_600SemiBold',
+                },
+              }}
+            />
+            <Stack.Screen
+              name="play/game"
+              options={{
+                headerShown: true,
+                headerTitle: 'مباراة',
+                headerBackTitle: 'رجوع',
+                headerStyle: { backgroundColor: colors.backgroundRaised },
+                headerTintColor: colors.ivory,
+                headerShadowVisible: false,
+                headerTitleStyle: {
+                  fontFamily: 'IBMPlexSansArabic_600SemiBold',
+                },
+              }}
+            />
+          </Stack>
+        </WebDesktopShell>
+      </ProgressProvider>
+    </LocaleProvider>
   );
 }
 
 const styles = StyleSheet.create({
   boot: {
     flex: 1,
-    backgroundColor: colors.boardFrame,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

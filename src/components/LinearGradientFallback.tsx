@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/lib/theme';
 
-/** Soft layered green backdrop without extra native gradient deps. */
+/** Dark header band with a restrained gold glow. */
 export function LinearGradientFallback({
   children,
   style,
@@ -12,9 +12,9 @@ export function LinearGradientFallback({
 }) {
   return (
     <View style={[styles.base, style]}>
-      <View style={styles.glowTop} />
-      <View style={styles.glowBottom} />
-      <View style={styles.pattern} />
+      <View style={styles.glowGold} />
+      <View style={styles.glowSilver} />
+      <View style={styles.rule} />
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -22,35 +22,35 @@ export function LinearGradientFallback({
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: colors.boardFrame,
+    backgroundColor: colors.backgroundRaised,
     overflow: 'hidden',
     position: 'relative',
   },
-  glowTop: {
+  glowGold: {
     position: 'absolute',
-    top: -80,
-    end: -40,
+    top: -90,
+    end: -50,
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(212, 160, 23, 0.18)',
+    backgroundColor: 'rgba(198, 161, 91, 0.16)',
   },
-  glowBottom: {
+  glowSilver: {
     position: 'absolute',
-    bottom: -60,
-    start: -30,
+    bottom: -70,
+    start: -40,
     width: 180,
     height: 180,
     borderRadius: 90,
-    backgroundColor: 'rgba(47, 93, 74, 0.55)',
+    backgroundColor: 'rgba(197, 204, 214, 0.06)',
   },
-  pattern: {
+  rule: {
     position: 'absolute',
-    inset: 0,
-    opacity: 0.12,
-    backgroundColor: 'transparent',
-    borderWidth: 24,
-    borderColor: colors.boardDark,
+    start: 24,
+    end: 24,
+    bottom: 0,
+    height: 1,
+    backgroundColor: 'rgba(198, 161, 91, 0.45)',
   },
   content: {
     zIndex: 1,

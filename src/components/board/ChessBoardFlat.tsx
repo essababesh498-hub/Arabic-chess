@@ -10,9 +10,11 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Chess, type Square } from 'chess.js';
+import type { Square } from 'chess.js';
+import { loadPosition } from '@/lib/chess/position';
 import { pieceGlyph } from '@/lib/chess/unicode';
 import { pieceName } from '@/lib/glossary';
+import { boardPixelSize } from '@/components/board/boardSize';
 import { colors, typography } from '@/lib/theme';
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
@@ -29,6 +31,8 @@ type Props = {
   interactive?: boolean;
   onSquarePress?: (square: Square) => void;
   showCoordinates?: boolean;
+  /** Cap the board so it fits the space left by the game chrome. */
+  maxSize?: number;
 };
 
 export function ChessBoard({
@@ -41,13 +45,14 @@ export function ChessBoard({
   interactive = true,
   onSquarePress,
   showCoordinates = true,
+  maxSize,
 }: Props) {
   const { width } = useWindowDimensions();
-  const boardSize = Math.min(width - 32, 420);
+  const boardSize = boardPixelSize(width, maxSize);
   const squareSize = boardSize / 8;
 
   const board = useMemo(() => {
-    const game = new Chess(fen);
+    const game = loadPosition(fen);
     return game.board();
   }, [fen]);
 
@@ -180,12 +185,12 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: 'rgba(15, 31, 24, 0.35)',
+    backgroundColor: colors.moveHint,
   },
   captureRing: {
     ...StyleSheet.absoluteFill,
     borderWidth: 3,
-    borderColor: 'rgba(15, 31, 24, 0.45)',
+    borderColor: colors.moveHint,
     borderRadius: 4,
   },
   coord: {

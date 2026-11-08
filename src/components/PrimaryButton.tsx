@@ -6,12 +6,15 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { useLocaleLayout } from '@/lib/localeLayout';
 import { colors, radii, spacing, typography } from '@/lib/theme';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: Variant;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
@@ -23,6 +26,7 @@ export function PrimaryButton({
   disabled,
   style,
 }: Props) {
+  const layout = useLocaleLayout();
   return (
     <Pressable
       accessibilityRole="button"
@@ -34,7 +38,7 @@ export function PrimaryButton({
         variant === 'secondary' && styles.secondary,
         variant === 'ghost' && styles.ghost,
         variant === 'danger' && styles.danger,
-        (pressed || disabled) && styles.pressed,
+        pressed && !disabled && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}
@@ -42,7 +46,9 @@ export function PrimaryButton({
       <Text
         style={[
           styles.label,
-          (variant === 'secondary' || variant === 'ghost') && styles.labelDark,
+          layout.center,
+          variant === 'primary' && styles.labelOnLight,
+          variant === 'danger' && styles.labelOnLight,
         ]}
       >
         {label}
@@ -61,32 +67,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: colors.boardFrame,
+    backgroundColor: colors.ivory,
   },
   secondary: {
-    backgroundColor: colors.sandSoft,
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
   },
   ghost: {
     backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   danger: {
     backgroundColor: colors.danger,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.84,
   },
   disabled: {
-    opacity: 0.45,
+    opacity: 0.4,
   },
   label: {
     ...typography.button,
-    color: colors.cream,
+    color: colors.ink,
     textAlign: 'center',
     writingDirection: 'rtl',
   },
-  labelDark: {
-    color: colors.ink,
+  labelOnLight: {
+    color: colors.onAccent,
   },
 });
